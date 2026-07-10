@@ -1,0 +1,261 @@
+<title>GCP ACE Practice</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --ink-1: #0b0b0b;
+    --ink-2: #52514e;
+    --ink-3: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --accent: #2a78d6;
+    --accent-soft: #cde2fb;
+    --good: #006300;
+    --good-bg: rgba(12,163,12,0.10);
+    --bad: #d03b3b;
+    --bad-bg: rgba(208,59,59,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface-1: #1a1a19;
+      --page: #0d0d0d;
+      --ink-1: #ffffff;
+      --ink-2: #c3c2b7;
+      --ink-3: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255,255,255,0.10);
+      --accent: #3987e5;
+      --accent-soft: #184f95;
+      --good: #0ca30c;
+      --good-bg: rgba(12,163,12,0.14);
+      --bad: #e66767;
+      --bad-bg: rgba(230,103,103,0.10);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--ink-1);
+    line-height: 1.5;
+  }
+  header {
+    padding: 20px 24px 4px;
+    max-width: 980px;
+    margin: 0 auto;
+  }
+  header h1 { font-size: 20px; margin: 0; font-weight: 650; }
+  header p { margin: 2px 0 0; color: var(--ink-2); font-size: 14px; }
+  main { max-width: 980px; margin: 0 auto; padding: 16px 24px 64px; }
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .row { display: grid; gap: 14px; margin-bottom: 14px; }
+  .stats-row { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  .stat .label { font-size: 13px; color: var(--ink-2); }
+  .stat .value { font-size: 30px; font-weight: 600; margin-top: 2px; }
+  .stat .sub { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  .modes-row { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+  .mode-card h3 { margin: 0 0 4px; font-size: 15px; }
+  .mode-card p { margin: 0 0 12px; font-size: 13px; color: var(--ink-2); }
+  .charts-row { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 760px) { .charts-row { grid-template-columns: 1fr; } }
+  .card h2 { font-size: 15px; margin: 0 0 10px; font-weight: 600; }
+  button {
+    font: inherit;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-1);
+    color: var(--ink-1);
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  button.primary:hover { filter: brightness(1.08); }
+  button:disabled { opacity: 0.45; cursor: default; }
+  select {
+    font: inherit; font-size: 14px; padding: 7px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--ink-1);
+    max-width: 100%;
+  }
+  .quiz-top {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .quiz-meta { font-size: 13px; color: var(--ink-2); }
+  .chip {
+    display: inline-block; font-size: 12px; padding: 2px 10px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--ink-1); margin-left: 8px;
+  }
+  #timer { font-variant-numeric: tabular-nums; font-weight: 600; }
+  #timer.low { color: var(--bad); }
+  .progress-track {
+    height: 6px; border-radius: 3px; background: var(--grid);
+    margin-bottom: 16px; overflow: hidden;
+  }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; width: 0; }
+  .qtext { font-size: 16px; font-weight: 550; margin: 0 0 16px; white-space: pre-wrap; }
+  .multi-note { font-size: 13px; color: var(--ink-2); margin: -10px 0 14px; }
+  .options { display: grid; gap: 8px; margin-bottom: 16px; }
+  .opt {
+    text-align: left; padding: 11px 14px; border-radius: 8px; line-height: 1.45;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--ink-1);
+    display: flex; gap: 10px; align-items: baseline; cursor: pointer; font-size: 14px;
+  }
+  .opt .key { font-weight: 650; color: var(--ink-3); flex: 0 0 auto; }
+  .opt.selected { border-color: var(--accent); outline: 1px solid var(--accent); }
+  .opt.correct { border-color: var(--good); background: var(--good-bg); outline: 1px solid var(--good); }
+  .opt.wrong { border-color: var(--bad); background: var(--bad-bg); outline: 1px solid var(--bad); }
+  .opt.locked { cursor: default; }
+  .feedback { border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; font-size: 14px; }
+  .feedback.ok { background: var(--good-bg); border: 1px solid var(--good); }
+  .feedback.no { background: var(--bad-bg); border: 1px solid var(--bad); }
+  .feedback .verdict { font-weight: 650; margin-bottom: 6px; }
+  .feedback.ok .verdict { color: var(--good); }
+  .feedback.no .verdict { color: var(--bad); }
+  .quiz-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .results-score { font-size: 44px; font-weight: 650; }
+  .results-sub { color: var(--ink-2); margin-bottom: 18px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--grid); }
+  th { color: var(--ink-2); font-weight: 600; font-size: 13px; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .sessions-list { font-size: 13px; color: var(--ink-2); margin-top: 10px; }
+  .sessions-list div { padding: 3px 0; border-top: 1px solid var(--grid); display: flex; justify-content: space-between; }
+  .chart-empty { color: var(--ink-3); font-size: 13px; padding: 30px 0; text-align: center; }
+  .footer-tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .footer-tools .note { font-size: 12px; color: var(--ink-3); }
+  #tooltip {
+    position: fixed; pointer-events: none; z-index: 10; display: none;
+    background: var(--ink-1); color: var(--page); font-size: 12px;
+    padding: 5px 9px; border-radius: 6px; white-space: nowrap;
+  }
+  svg text { font-family: inherit; }
+  .domain-pick { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+</style>
+
+<header>
+  <h1>GCP Associate Cloud Engineer — Practice</h1>
+  <p>Question bank aligned to the official exam guide. Progress is saved in this browser.</p>
+</header>
+
+<main>
+  <!-- HOME -->
+  <section id="view-home">
+    <div class="row stats-row" id="stat-tiles"></div>
+
+    <div class="row modes-row">
+      <div class="card mode-card">
+        <h3>Quick quiz</h3>
+        <p>10 questions, all domains. New questions first, then ones you missed.</p>
+        <button class="primary" onclick="startQuiz('quick')">Start</button>
+      </div>
+      <div class="card mode-card">
+        <h3>Mock exam</h3>
+        <p>50 questions weighted like the real exam, 120-minute timer.</p>
+        <button class="primary" onclick="startQuiz('mock')">Start</button>
+      </div>
+      <div class="card mode-card">
+        <h3>Domain practice</h3>
+        <p>20 questions from one exam domain.</p>
+        <div class="domain-pick">
+          <select id="domain-select"></select>
+          <button class="primary" onclick="startQuiz('domain')">Start</button>
+        </div>
+      </div>
+      <div class="card mode-card">
+        <h3>Review missed</h3>
+        <p id="missed-desc">Retry every question you last answered incorrectly.</p>
+        <button class="primary" id="missed-btn" onclick="startQuiz('missed')">Start</button>
+      </div>
+    </div>
+
+    <div class="row charts-row">
+      <div class="card">
+        <h2>Score by session</h2>
+        <div id="line-chart"></div>
+        <div class="sessions-list" id="sessions-list"></div>
+      </div>
+      <div class="card">
+        <h2>Accuracy by domain (all time)</h2>
+        <div id="bar-chart"></div>
+      </div>
+    </div>
+
+    <div class="card footer-tools">
+      <button onclick="exportProgress()">Export progress</button>
+      <button onclick="document.getElementById('import-file').click()">Import progress</button>
+      <input type="file" id="import-file" accept=".json" hidden onchange="importProgress(this)">
+      <button onclick="resetProgress()">Reset progress</button>
+      <span class="note" id="bank-note"></span>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="view-quiz" hidden>
+    <div class="quiz-top">
+      <div class="quiz-meta">
+        <span id="q-counter"></span><span class="chip" id="q-domain"></span>
+      </div>
+      <div class="quiz-meta">
+        <span id="timer" hidden></span>
+        <button onclick="quitQuiz()" style="margin-left:12px">End session</button>
+      </div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="q-progress"></div></div>
+    <div class="card">
+      <p class="qtext" id="q-text"></p>
+      <p class="multi-note" id="q-multinote" hidden>Select all answers that apply, then check.</p>
+      <div class="options" id="q-options"></div>
+      <div class="feedback" id="q-feedback" hidden>
+        <div class="verdict" id="q-verdict"></div>
+        <div id="q-explanation"></div>
+      </div>
+      <div class="quiz-actions">
+        <button class="primary" id="q-check" onclick="checkAnswer()" disabled>Check answer</button>
+        <button class="primary" id="q-next" onclick="nextQuestion()" hidden>Next</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="view-results" hidden>
+    <div class="card" style="margin-bottom:14px">
+      <div class="results-score" id="r-score"></div>
+      <div class="results-sub" id="r-sub"></div>
+      <table id="r-table"></table>
+    </div>
+    <button class="primary" onclick="goHome()">Back to dashboard</button>
+    <button onclick="startQuiz(lastMode)" id="r-again">Practice again</button>
+  </section>
+</main>
+
+<div id="tooltip"></div>
+
+<script src="data/domain1-a.js"></script>
+<script src="data/domain1-b.js"></script>
+<script src="data/domain2-a.js"></script>
+<script src="data/domain2-b.js"></script>
+<script src="data/domain3-a.js"></script>
+<script src="data/domain3-b.js"></script>
+<script src="data/domain3-c.js"></script>
+<script src="data/domain4-a.js"></script>
+<script src="data/domain4-b.js"></script>
+<script src="data/domain5-a.js"></script>
+<script src="data/domain5-b.js"></script>
+<script src="app.js"></script>

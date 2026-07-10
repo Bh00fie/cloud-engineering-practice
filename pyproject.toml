@@ -1,0 +1,10 @@
+[project]
+name = "cloud-engineering-practice"
+version = "1.0.0"
+description = "GCP Associate Cloud Engineer practice exam app (static HTML/JS, no dependencies)"
+requires-python = ">=3.9"
+dependencies = []
+
+# The app itself is pure HTML/CSS/JavaScript and needs nothing installed.
+# This file exists only so `uv sync` works and you can serve the app with:
+#   uv run python -m http.server 8000
