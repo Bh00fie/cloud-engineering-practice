@@ -1,7 +1,7 @@
 # GCP Associate Cloud Engineer — Practice App
 
 A self-contained practice-exam app for the **Google Cloud Associate Cloud Engineer (ACE)**
-certification. It ships with **553 original questions** written to match the
+certification. It ships with **653 original questions** written to match the
 [official exam guide](https://services.google.com/fh/files/misc/associate_cloud_engineer_exam_guide_english.pdf),
 gives you an **explanation after every answer** (why the right answer is right *and*
 why the tempting wrong ones are wrong), and **tracks your progress over time** so you
@@ -44,17 +44,20 @@ firebase-config.js  Firebase web-app config for project ace-practice-91738 (not 
 firestore.rules     Firestore security rules (the DEPLOYED version — keep in sync)
 netlify.toml        Netlify config (static site, no build step)
 data/
-  domain1-a.js      Domain 1: Setting up a cloud solution environment  (110 q)
+  domain1-a.js      Domain 1: Setting up a cloud solution environment  (130 q total)
   domain1-b.js
-  domain2-a.js      Domain 2: Planning & configuring a cloud solution  (100 q)
+  domain2-a.js      Domain 2: Planning & configuring a cloud solution  (118 q total)
   domain2-b.js
-  domain3-a.js      Domain 3: Deploying & implementing a cloud solution (125 q)
+  domain3-a.js      Domain 3: Deploying & implementing a cloud solution (147 q total)
   domain3-b.js
   domain3-c.js
-  domain4-a.js      Domain 4: Ensuring successful operation             (110 q)
+  domain4-a.js      Domain 4: Ensuring successful operation             (130 q total)
   domain4-b.js
-  domain5-a.js      Domain 5: Configuring access & security             (108 q)
+  domain5-a.js      Domain 5: Configuring access & security             (128 q total)
   domain5-b.js
+  scenarios-a.js    100 exam-style scenario questions (verbose business
+  scenarios-b.js    context, written to mimic the real exam's tone) spread
+  scenarios-c.js    across all five domains — mixed into every mode
 pyproject.toml      Only so `uv sync` / `uv run` work; no dependencies
 ```
 
@@ -87,8 +90,11 @@ The app deliberately does *not* pick uniformly at random:
 2. then **questions you last got wrong** — so mistakes come back around,
 3. then previously-correct questions, **oldest first** — light spaced repetition.
 
-The 553-question bank at 10–50 questions per session gives you weeks of
-non-repeating practice.
+The 653-question bank at 10–50 questions per session gives you weeks of
+non-repeating practice. 100 of the questions are written in the real exam's
+verbose scenario style — several sentences of business context with constraints
+like "minimize cost" or "following Google-recommended practices" — so the mocks
+read like the actual test.
 
 ---
 
@@ -201,13 +207,13 @@ owner — nobody else can do this, and app users can never read each other's dat
 node admin/stats.js
 ```
 
-It prints one row per user — questions covered (of 553), total answers, overall
+It prints one row per user — questions covered (of 653), total answers, overall
 accuracy, session count, last score, last-5-score trend, last active time — plus a
 per-domain accuracy line for each user. Example:
 
 ```
 ┌─────────┬──────────────────┬─────────┬──────────┬──────────┬────────────┬───────────────┐
-│  Email  │ Covered (of 553) │ Answers │ Accuracy │ Sessions │ Last score │ Last 5 scores │
+│  Email  │ Covered (of 653) │ Answers │ Accuracy │ Sessions │ Last score │ Last 5 scores │
 ├─────────┼──────────────────┼─────────┼──────────┼──────────┼────────────┼───────────────┤
 │ ana@…   │       212        │   340   │   78%    │    19    │ 84% (mock) │ 70% → … → 84% │
 └─────────┴──────────────────┴─────────┴──────────┴──────────┴────────────┴───────────────┘
@@ -268,7 +274,7 @@ In guest mode everything is stored in your **browser's localStorage** (key
 
 The dashboard shows:
 
-- **Stat tiles** — questions covered (of 553), overall accuracy, sessions completed,
+- **Stat tiles** — questions covered (of 653), overall accuracy, sessions completed,
   last session score.
 - **Score by session** (line chart) — your last 20 session scores, so you can see
   the trend. Hover any point for date/mode/score. The list below it shows your five
