@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#2a78d6"/>
+  <!-- cloud: two side circles, one top circle, flat base -->
+  <circle cx="176" cy="300" r="58" fill="#ffffff"/>
+  <circle cx="336" cy="300" r="58" fill="#ffffff"/>
+  <circle cx="256" cy="240" r="76" fill="#ffffff"/>
+  <rect x="176" y="286" width="160" height="72" fill="#ffffff"/>
+</svg>

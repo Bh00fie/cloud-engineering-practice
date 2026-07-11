@@ -1,6 +1,14 @@
 <title>GCP ACE Practice</title>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ACE Practice">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
   :root {
     --surface-1: #fcfcfb;
@@ -78,15 +86,21 @@
     color: var(--ink-1);
     padding: 8px 16px;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
-  button:hover { border-color: var(--accent); }
   button.primary {
     background: var(--accent);
     border-color: var(--accent);
     color: #fff;
     font-weight: 600;
   }
-  button.primary:hover { filter: brightness(1.08); }
+  /* Hover feedback only on devices that actually hover — on touch screens
+     these styles would stick to the last tapped element. */
+  @media (hover: hover) {
+    button:hover { border-color: var(--accent); }
+    button.primary:hover { filter: brightness(1.08); }
+  }
   button:disabled { opacity: 0.45; cursor: default; }
   select {
     font: inherit; font-size: 14px; padding: 7px 10px; border-radius: 8px;
@@ -143,9 +157,10 @@
   .auth-card { margin-bottom: 14px; }
   .auth-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
   .auth-row input {
-    font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 8px;
+    /* 16px minimum: anything smaller makes iOS Safari zoom in when the field is focused */
+    font: inherit; font-size: 16px; padding: 8px 10px; border-radius: 8px;
     border: 1px solid var(--border); background: var(--page); color: var(--ink-1);
-    min-width: 180px;
+    min-width: 180px; flex: 1 1 180px;
   }
   .auth-note { font-size: 12px; color: var(--ink-3); margin: 8px 0 0; }
   .auth-error { font-size: 13px; color: var(--bad); margin: 8px 0 0; }
@@ -159,6 +174,33 @@
   }
   svg text { font-family: inherit; }
   .domain-pick { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  /* Respect the notch / home-indicator when launched from the home screen */
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  header { padding-top: calc(20px + env(safe-area-inset-top)); }
+  main { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+
+  /* Phone layout */
+  @media (max-width: 600px) {
+    header { padding-left: 14px; padding-right: 14px; }
+    header h1 { font-size: 17px; }
+    main { padding-left: 14px; padding-right: 14px; }
+    .card { padding: 14px; }
+    .stat .value { font-size: 24px; }
+    .results-score { font-size: 36px; }
+    /* Thumb-sized answer options and action buttons (44px Apple HIG minimum) */
+    .opt { padding: 13px 14px; font-size: 15px; }
+    .quiz-actions { flex-direction: column-reverse; }
+    .quiz-actions button { width: 100%; min-height: 46px; font-size: 16px; }
+    .auth-row button { min-height: 42px; }
+    .auth-row .auth-link { min-height: 0; }
+    .mode-card button.primary { width: 100%; min-height: 42px; }
+    .domain-pick { width: 100%; }
+    .domain-pick select { flex: 1 1 auto; min-height: 42px; }
+  }
 </style>
 
 <header>

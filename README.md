@@ -32,6 +32,22 @@ Then open <http://localhost:8000>.
 > is useful if your browser restricts `file://` pages, or if you want to use the app
 > from another device on your network.
 
+## Using it on your phone
+
+The live site is fully responsive — open https://gcpcloudengineering.netlify.app on your
+phone, sign in, and your progress follows you between devices (that's the Firestore sync).
+
+To make it feel like a native app, install it to your home screen:
+
+- **Android (Chrome)**: open the site → ⋮ menu → **Add to Home screen** (or "Install app").
+- **iPhone (Safari)**: open the site → Share button → **Add to Home Screen**.
+
+It then launches full-screen with its own icon (`manifest.webmanifest` + `icons/`), no
+browser bars. Mobile-specific touches in the CSS: 44px+ tap targets for answer options
+and the Check/Next buttons, full-width action buttons on narrow screens, no sticky hover
+states on touch screens, 16px inputs so iOS doesn't zoom when you tap the login fields,
+and safe-area padding for notched phones.
+
 ---
 
 ## What's inside
@@ -43,6 +59,8 @@ auth.js             Firebase Authentication + Firestore cloud sync (ES module)
 firebase-config.js  Firebase web-app config for project ace-practice-91738 (not secret)
 firestore.rules     Firestore security rules (the DEPLOYED version — keep in sync)
 netlify.toml        Netlify config (static site, no build step)
+manifest.webmanifest  Web-app manifest so phones can "Add to Home Screen"
+icons/              App icons (SVG + PNGs generated for the manifest / iOS)
 data/
   domain1-a.js      Domain 1: Setting up a cloud solution environment  (130 q total)
   domain1-b.js
