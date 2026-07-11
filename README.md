@@ -40,8 +40,8 @@ Then open <http://localhost:8000>.
 index.html          App shell, styling, view layout
 app.js              All application logic (quiz engine, progress tracking, charts)
 auth.js             Firebase Authentication + Firestore cloud sync (ES module)
-firebase-config.js  YOUR Firebase project config goes here (placeholders until then)
-firestore.rules     Firestore security rules — paste into the Firebase console
+firebase-config.js  Firebase web-app config for project ace-practice-91738 (not secret)
+firestore.rules     Firestore security rules (the DEPLOYED version — keep in sync)
 netlify.toml        Netlify config (static site, no build step)
 data/
   domain1-a.js      Domain 1: Setting up a cloud solution environment  (110 q)
@@ -92,72 +92,172 @@ non-repeating practice.
 
 ---
 
-## Accounts & cloud sync (optional)
+## Live deployment — the full picture
 
-The app has two modes:
+> This section documents the ACTUAL deployed setup (July 2026), so future-you knows
+> exactly what exists, where, and how to change it.
 
-- **Guest mode** (default, zero setup): progress is stored in the browser's
-  localStorage only.
-- **Signed in**: users create an account (email + password) and their progress is
-  stored in **Cloud Firestore on GCP**, synced automatically after every answer
-  (debounced), and available from any device. When a guest signs in, local progress
-  is **merged** into their cloud copy, so nothing is lost.
+### URLs & consoles
 
-How it works: the static site uses **Firebase Authentication** for accounts and
-writes one Firestore document per user (`users/{uid}`). The security rules in
-`firestore.rules` guarantee a user can only read/write their own document. There is
-no server of your own — the browser talks to GCP directly.
+| What | Where |
+|---|---|
+| **Live site** | <https://gcpcloudengineering.netlify.app> |
+| GitHub repo (deploy source) | <https://github.com/Bh00fie/cloud-engineering-practice> |
+| Netlify dashboard | <https://app.netlify.com> (site: gcpcloudengineering) |
+| Firebase console (project home) | <https://console.firebase.google.com/project/ace-practice-91738> |
+| Users (accounts) | <https://console.firebase.google.com/project/ace-practice-91738/authentication/users> |
+| Progress data (Firestore) | <https://console.firebase.google.com/project/ace-practice-91738/firestore> |
+| Security rules | <https://console.firebase.google.com/project/ace-practice-91738/firestore/rules> |
+| Same project in the GCP console | <https://console.cloud.google.com/home/dashboard?project=ace-practice-91738> |
 
-At ~10 users/day this fits entirely in the **free tier** (Firestore free quota:
-50k reads / 20k writes per day; Firebase Auth is free at this scale). No billing
-account is required.
+### Architecture
 
----
-
-## Deploying (Netlify + GCP)
-
-### Part 1 — GCP/Firebase setup (one-time, ~10 minutes, all clicking)
-
-1. Go to <https://console.firebase.google.com> → **Add project**. Name it (e.g.
-   `ace-practice`). You can disable Google Analytics. *(This creates a normal GCP
-   project — you'll see it in the GCP console too.)*
-2. **Build → Authentication → Get started** → Sign-in method → enable
-   **Email/Password** → Save.
-3. **Build → Firestore Database → Create database** → choose a region near you
-   (e.g. `europe-west3` or `us-central1`) → **production mode** → Create.
-4. Firestore → **Rules** tab → replace the contents with the contents of
-   `firestore.rules` from this repo → **Publish**.
-5. Project settings (gear icon) → **Your apps** → click the **`</>` (Web)** icon →
-   register the app (no Firebase Hosting needed) → copy the `firebaseConfig` object
-   it shows you → paste those values into `firebase-config.js` in this repo.
-6. **Authentication → Settings → Authorized domains**: `localhost` is pre-added;
-   after Part 2, come back and **add your Netlify domain** (e.g.
-   `your-site.netlify.app`).
-
-### Part 2 — Netlify
-
-- Easiest: push this repo to GitHub, then in Netlify: **Add new site → Import from
-  Git** → pick the repo → build command: *(leave empty)* → publish directory: `.`
-  → Deploy. (Or drag-and-drop the project folder onto Netlify for a one-off deploy.)
-- Then do step 6 above (authorized domains) with the URL Netlify gives you.
-
-### Testing locally with cloud sync
-
-Firebase Auth does not work from `file://` pages, so when testing accounts locally,
-serve over localhost:
-
-```powershell
-uv run python -m http.server 8000    # then open http://localhost:8000
+```
+Browser (static app from Netlify)
+   │
+   ├── Firebase Authentication ──► sign-up / sign-in (email+password)
+   │        (Identity Toolkit API)      one identity per user (uid)
+   │
+   └── Cloud Firestore ──────────► users/{uid} document
+            (europe-west3)             { email, updated, data: "<JSON progress>" }
 ```
 
-(Guest mode still works fine from `file://`.)
+- **No custom server.** The browser talks to GCP directly with the Firebase JS SDK
+  (v11, loaded from Google's CDN in `auth.js`).
+- **Hosting**: Netlify serves the repo as-is (no build step; `netlify.toml` sets
+  publish dir `.` and security headers). Every `git push` to `main` auto-redeploys.
+- **Data flow**: progress is always written to localStorage first; when signed in,
+  `auth.js` also writes the whole store to Firestore, debounced 2.5s, and flushes
+  when the tab is hidden/closed. On sign-in, the cloud copy and any local (guest)
+  progress are **merged** (per-question: the record with more answers wins;
+  sessions are unioned and deduped), then pushed back up.
+- **Sign-out** clears the device copy; the cloud keeps everything.
 
-### Where to see your users' data in GCP
+### GCP project details
 
-- Users: Firebase console → Authentication → Users.
-- Progress: Firebase console → Firestore Database → `users` collection (one
-  document per user; the `data` field holds their progress as JSON). The same data
-  is visible in the GCP console under **Firestore**.
+| Item | Value |
+|---|---|
+| Project ID | `ace-practice-91738` |
+| Owner | `abhinandanthour2001@gmail.com` |
+| Billing | **None linked** — runs on the free tier and cannot incur charges |
+| Firestore | Native mode, **default** database, location `europe-west3` (Frankfurt) |
+| Auth provider | Email/Password (plain Firebase Auth, NOT paid Identity Platform) |
+| Authorized domains | `localhost`, `ace-practice-91738.firebaseapp.com`, `ace-practice-91738.web.app`, `gcpcloudengineering.netlify.app` |
+| Enabled APIs | `firebase`, `firestore`, `identitytoolkit`, `firebaserules` |
+| Web app ID | `1:268816140963:web:26990f0347902dc38d0d16` |
+
+The web config in `firebase-config.js` (apiKey etc.) is **not a secret** — it only
+identifies the project to Google's SDK. Real protection comes from the security
+rules and from Auth. Keeping the repo private is fine but not security-relevant.
+
+### How it was set up (so you can reproduce or repair it)
+
+All of this was done from the CLI/REST with `gcloud` credentials — the console
+equivalents are in parentheses:
+
+1. `gcloud projects create ace-practice-91738` (console: New project)
+2. `gcloud services enable firebase.googleapis.com firestore.googleapis.com identitytoolkit.googleapis.com firebaserules.googleapis.com`
+3. `POST https://firebase.googleapis.com/v1beta1/projects/ace-practice-91738:addFirebase`
+   (console: "Add Firebase to GCP project"). *Gotcha: fails with a bare 403 until
+   the Google account has accepted the Firebase Terms of Service once at
+   console.firebase.google.com.*
+4. `gcloud firestore databases create --location=europe-west3`
+5. `POST .../projects/ace-practice-91738/webApps` to register the web app, then
+   `GET .../webApps/{appId}/config` → values pasted into `firebase-config.js`
+6. Email/Password enabled **in the console** (Authentication → Get started →
+   Email/Password). *Gotcha: the API route (`identityPlatform:initializeAuth`)
+   activates paid Identity Platform and demands billing — the console button gives
+   you the free tier.*
+7. Rules deployed via the Firebase Rules API (create ruleset from
+   `firestore.rules`, point the `cloud.firestore` release at it)
+8. Netlify domain added to authorized domains via
+   `PATCH .../admin/v2/projects/ace-practice-91738/config?updateMask=authorizedDomains`
+   (console: Authentication → Settings → Authorized domains)
+
+It was verified end-to-end with REST tests: sign-up, Firestore write/read as the
+owner, anonymous read **denied**, cross-user read **denied**; test users/doc deleted
+afterward.
+
+### Security rules (deployed)
+
+`firestore.rules` in this repo is the deployed version. In plain words:
+
+- A signed-in user can read/delete only `users/{their own uid}`.
+- Creates/updates additionally require the document to carry a string `data` field
+  (the app's JSON payload) — malformed writes are rejected.
+- Every other path in the database is denied for everyone.
+
+**To change rules**: edit `firestore.rules`, then paste it into the
+[Rules console](https://console.firebase.google.com/project/ace-practice-91738/firestore/rules)
+and Publish (or redeploy via API/CLI). *The repo file does nothing by itself —
+rules must be published to take effect.*
+
+### Seeing stats of your users (admin)
+
+Run the admin script from this repo (requires `gcloud auth login` as the project
+owner — nobody else can do this, and app users can never read each other's data):
+
+```powershell
+node admin/stats.js
+```
+
+It prints one row per user — questions covered (of 553), total answers, overall
+accuracy, session count, last score, last-5-score trend, last active time — plus a
+per-domain accuracy line for each user. Example:
+
+```
+┌─────────┬──────────────────┬─────────┬──────────┬──────────┬────────────┬───────────────┐
+│  Email  │ Covered (of 553) │ Answers │ Accuracy │ Sessions │ Last score │ Last 5 scores │
+├─────────┼──────────────────┼─────────┼──────────┼──────────┼────────────┼───────────────┤
+│ ana@…   │       212        │   340   │   78%    │    19    │ 84% (mock) │ 70% → … → 84% │
+└─────────┴──────────────────┴─────────┴──────────┴──────────┴────────────┴───────────────┘
+ana@…  →  Setup: 81% (70) · Planning: 74% (61) · Deploying: 77% (90) · …
+```
+
+Why this works for you but not for users: the script calls the Firestore REST API
+with your Google identity, which is authorized by **IAM** (you're project owner) —
+security rules only govern the client SDK used by the browser app. The raw data is
+also always visible in the [Firestore console](https://console.firebase.google.com/project/ace-practice-91738/firestore).
+
+### Routine operations
+
+- **Deploy an app change**: edit files → commit → `git push` → Netlify rebuilds
+  (~30s). Nothing to do on the GCP side.
+- **See who signed up**: Authentication → Users (you can disable, delete, or
+  reset-password from the ⋮ menu per user).
+- **Inspect someone's progress**: Firestore → `users` → click their uid — the
+  `data` field is the same JSON the Export button produces in the app.
+- **Delete a user completely**: delete them in Authentication **and** delete their
+  `users/{uid}` document in Firestore (two separate stores).
+- **Add another domain later** (e.g. a custom domain on Netlify): add it under
+  Authentication → Settings → Authorized domains, or sign-in will fail there with
+  `auth/unauthorized-domain`.
+- **Local development with accounts**: Firebase Auth doesn't run from `file://`
+  pages — serve with `uv run python -m http.server 8000` and use
+  <http://localhost:8000> (localhost is an authorized domain). Guest mode works
+  from `file://` regardless.
+
+### Costs & limits (why this stays at $0)
+
+- No billing account is linked to `ace-practice-91738`, so it **cannot** charge you;
+  if a quota were ever exceeded, requests would fail rather than bill.
+- Free daily Firestore quota: 50k reads, 20k writes, 20k deletes, 1 GiB stored.
+  A heavy user generates ~100–200 writes/day (debounced), so ~10 users/day uses
+  well under 5% of quota. Firebase Auth is free for this scale (tens of thousands
+  of users).
+- Each user's whole progress lives in ONE document (max ~1 MiB; actual size tens of
+  KB — sessions are capped at 300 in the merge logic).
+
+### Troubleshooting
+
+| Symptom | Cause / fix |
+|---|---|
+| `auth/unauthorized-domain` on sign-in | The site's domain isn't in Authentication → Settings → Authorized domains — add it. |
+| Account box doesn't appear at all | `firebase-config.js` still has placeholders, or `auth.js` failed to load (check browser console). |
+| Sign-in works but progress doesn't sync | Check browser console for Firestore errors; verify the rules release is the repo version. |
+| Password-reset email missing | Check spam — it comes from `noreply@ace-practice-91738.firebaseapp.com`. |
+| `gcloud` commands fail with `invalid_grant` | Login expired — run `gcloud auth login`. |
+| Firebase REST APIs return 403 with quota-project message | Add header `x-goog-user-project: ace-practice-91738` to the request. |
 
 ---
 
