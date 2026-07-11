@@ -1,0 +1,19 @@
+rules_version = '2';
+
+// Each signed-in user may read/write ONLY their own document (users/{their-uid}).
+// Everything else is denied — nobody can list other users or touch other data.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      // On create/update additionally require the expected shape:
+      // progress payload must be a string (the app stores JSON in `data`).
+      allow create, update: if request.auth != null
+                            && request.auth.uid == uid
+                            && request.resource.data.data is string;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

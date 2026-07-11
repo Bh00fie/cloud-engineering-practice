@@ -38,7 +38,54 @@ let store = loadStore();
 
 function saveStore() {
   localStorage.setItem(STORE_KEY, JSON.stringify(store));
+  // Push to Firestore when a user is signed in (auth.js installs window.cloudSync).
+  if (window.cloudSync) window.cloudSync.scheduleSave(store);
 }
+
+// ---------------------------------------------------------------------------
+// Cloud sync bridge (used by auth.js; harmless when Firebase isn't configured)
+// ---------------------------------------------------------------------------
+
+// Merge two progress stores without losing data: for each question keep the
+// attempt record with more answers (newest timestamp breaks ties); sessions
+// are unioned and deduped by their start timestamp.
+function mergeStores(a, b) {
+  const out = { attempts: {}, sessions: [] };
+  const ids = new Set([...Object.keys(a.attempts), ...Object.keys(b.attempts)]);
+  for (const id of ids) {
+    const x = a.attempts[id], y = b.attempts[id];
+    if (x && y) {
+      const nx = x.c + x.w, ny = y.c + y.w;
+      out.attempts[id] = ny > nx || (ny === nx && (y.t || 0) > (x.t || 0)) ? y : x;
+    } else {
+      out.attempts[id] = x || y;
+    }
+  }
+  const seen = new Set();
+  out.sessions = [...a.sessions, ...b.sessions]
+    .filter((s) => (seen.has(s.d) ? false : (seen.add(s.d), true)))
+    .sort((x, y) => (x.d < y.d ? -1 : 1))
+    .slice(-300);
+  return out;
+}
+
+window.cloudBridge = {
+  getStore: () => store,
+  // Called on sign-in with the user's cloud copy: merge with whatever was done
+  // locally (e.g., as a guest), persist, and re-render.
+  applyRemote(remote) {
+    store = mergeStores(store, remote || { attempts: {}, sessions: [] });
+    saveStore();
+    renderDashboard();
+    return store;
+  },
+  // Called on sign-out: the cloud keeps the data; this device forgets it.
+  clearLocal() {
+    store = { attempts: {}, sessions: [] };
+    localStorage.setItem(STORE_KEY, JSON.stringify(store));
+    renderDashboard();
+  },
+};
 
 // ---------------------------------------------------------------------------
 // Question selection: unseen first, then previously-missed, then oldest-seen

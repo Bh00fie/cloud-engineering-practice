@@ -140,6 +140,18 @@
   .chart-empty { color: var(--ink-3); font-size: 13px; padding: 30px 0; text-align: center; }
   .footer-tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .footer-tools .note { font-size: 12px; color: var(--ink-3); }
+  .auth-card { margin-bottom: 14px; }
+  .auth-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  .auth-row input {
+    font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--page); color: var(--ink-1);
+    min-width: 180px;
+  }
+  .auth-note { font-size: 12px; color: var(--ink-3); margin: 8px 0 0; }
+  .auth-error { font-size: 13px; color: var(--bad); margin: 8px 0 0; }
+  .auth-link { background: none; border: none; color: var(--accent); padding: 0; font-size: 12px; cursor: pointer; }
+  .auth-signedin-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+  .sync-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
   #tooltip {
     position: fixed; pointer-events: none; z-index: 10; display: none;
     background: var(--ink-1); color: var(--page); font-size: 12px;
@@ -157,6 +169,29 @@
 <main>
   <!-- HOME -->
   <section id="view-home">
+    <div class="card auth-card" id="auth-card" hidden>
+      <div id="auth-signedout" hidden>
+        <h2>Account</h2>
+        <div class="auth-row">
+          <input type="email" id="auth-email-input" placeholder="Email" autocomplete="email">
+          <input type="password" id="auth-password-input" placeholder="Password (6+ characters)" autocomplete="current-password">
+          <button class="primary" id="auth-signin-btn">Sign in</button>
+          <button id="auth-signup-btn">Create account</button>
+          <button class="auth-link" id="auth-reset-btn">Forgot password?</button>
+        </div>
+        <div class="auth-error" id="auth-error" hidden></div>
+        <p class="auth-note">Sign in to save your progress to the cloud and access it from any device.
+          Without an account you can still practice — progress then stays in this browser only.</p>
+      </div>
+      <div id="auth-signedin" hidden>
+        <div class="auth-signedin-row">
+          <span class="sync-dot" title="Cloud sync on"></span>
+          <span>Signed in as <strong id="auth-user-email"></strong> — progress syncs to the cloud.</span>
+          <button id="auth-signout-btn">Sign out</button>
+        </div>
+      </div>
+    </div>
+
     <div class="row stats-row" id="stat-tiles"></div>
 
     <div class="row modes-row">
@@ -259,3 +294,5 @@
 <script src="data/domain5-a.js"></script>
 <script src="data/domain5-b.js"></script>
 <script src="app.js"></script>
+<script src="firebase-config.js"></script>
+<script type="module" src="auth.js"></script>

@@ -39,6 +39,10 @@ Then open <http://localhost:8000>.
 ```
 index.html          App shell, styling, view layout
 app.js              All application logic (quiz engine, progress tracking, charts)
+auth.js             Firebase Authentication + Firestore cloud sync (ES module)
+firebase-config.js  YOUR Firebase project config goes here (placeholders until then)
+firestore.rules     Firestore security rules — paste into the Firebase console
+netlify.toml        Netlify config (static site, no build step)
 data/
   domain1-a.js      Domain 1: Setting up a cloud solution environment  (110 q)
   domain1-b.js
@@ -88,10 +92,79 @@ non-repeating practice.
 
 ---
 
+## Accounts & cloud sync (optional)
+
+The app has two modes:
+
+- **Guest mode** (default, zero setup): progress is stored in the browser's
+  localStorage only.
+- **Signed in**: users create an account (email + password) and their progress is
+  stored in **Cloud Firestore on GCP**, synced automatically after every answer
+  (debounced), and available from any device. When a guest signs in, local progress
+  is **merged** into their cloud copy, so nothing is lost.
+
+How it works: the static site uses **Firebase Authentication** for accounts and
+writes one Firestore document per user (`users/{uid}`). The security rules in
+`firestore.rules` guarantee a user can only read/write their own document. There is
+no server of your own — the browser talks to GCP directly.
+
+At ~10 users/day this fits entirely in the **free tier** (Firestore free quota:
+50k reads / 20k writes per day; Firebase Auth is free at this scale). No billing
+account is required.
+
+---
+
+## Deploying (Netlify + GCP)
+
+### Part 1 — GCP/Firebase setup (one-time, ~10 minutes, all clicking)
+
+1. Go to <https://console.firebase.google.com> → **Add project**. Name it (e.g.
+   `ace-practice`). You can disable Google Analytics. *(This creates a normal GCP
+   project — you'll see it in the GCP console too.)*
+2. **Build → Authentication → Get started** → Sign-in method → enable
+   **Email/Password** → Save.
+3. **Build → Firestore Database → Create database** → choose a region near you
+   (e.g. `europe-west3` or `us-central1`) → **production mode** → Create.
+4. Firestore → **Rules** tab → replace the contents with the contents of
+   `firestore.rules` from this repo → **Publish**.
+5. Project settings (gear icon) → **Your apps** → click the **`</>` (Web)** icon →
+   register the app (no Firebase Hosting needed) → copy the `firebaseConfig` object
+   it shows you → paste those values into `firebase-config.js` in this repo.
+6. **Authentication → Settings → Authorized domains**: `localhost` is pre-added;
+   after Part 2, come back and **add your Netlify domain** (e.g.
+   `your-site.netlify.app`).
+
+### Part 2 — Netlify
+
+- Easiest: push this repo to GitHub, then in Netlify: **Add new site → Import from
+  Git** → pick the repo → build command: *(leave empty)* → publish directory: `.`
+  → Deploy. (Or drag-and-drop the project folder onto Netlify for a one-off deploy.)
+- Then do step 6 above (authorized domains) with the URL Netlify gives you.
+
+### Testing locally with cloud sync
+
+Firebase Auth does not work from `file://` pages, so when testing accounts locally,
+serve over localhost:
+
+```powershell
+uv run python -m http.server 8000    # then open http://localhost:8000
+```
+
+(Guest mode still works fine from `file://`.)
+
+### Where to see your users' data in GCP
+
+- Users: Firebase console → Authentication → Users.
+- Progress: Firebase console → Firestore Database → `users` collection (one
+  document per user; the `data` field holds their progress as JSON). The same data
+  is visible in the GCP console under **Firestore**.
+
+---
+
 ## Progress tracking
 
-Everything is stored in your **browser's localStorage** (key `gcp-ace-progress-v1`)
-— no account, no server, nothing leaves your machine.
+In guest mode everything is stored in your **browser's localStorage** (key
+`gcp-ace-progress-v1`); signed in, it also syncs to Firestore as described above.
 
 The dashboard shows:
 
