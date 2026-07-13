@@ -2,6 +2,10 @@
 [build]
   publish = "."
 
+# Serverless proxy for the in-app Gemini chatbot (needs GEMINI_API_KEY env var).
+[functions]
+  directory = "netlify/functions"
+
 # Basic security headers
 [[headers]]
   for = "/*"

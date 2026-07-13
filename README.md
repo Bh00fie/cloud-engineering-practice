@@ -1,7 +1,7 @@
 # GCP Associate Cloud Engineer — Practice App
 
 A self-contained practice-exam app for the **Google Cloud Associate Cloud Engineer (ACE)**
-certification. It ships with **653 original questions** written to match the
+certification. It ships with **658 original questions** written to match the
 [official exam guide](https://services.google.com/fh/files/misc/associate_cloud_engineer_exam_guide_english.pdf),
 gives you an **explanation after every answer** (why the right answer is right *and*
 why the tempting wrong ones are wrong), and **tracks your progress over time** so you
@@ -108,7 +108,7 @@ The app deliberately does *not* pick uniformly at random:
 2. then **questions you last got wrong** — so mistakes come back around,
 3. then previously-correct questions, **oldest first** — light spaced repetition.
 
-The 653-question bank at 10–50 questions per session gives you weeks of
+The 658-question bank at 10–50 questions per session gives you weeks of
 non-repeating practice. 100 of the questions are written in the real exam's
 verbose scenario style — several sentences of business context with constraints
 like "minimize cost" or "following Google-recommended practices" — so the mocks
@@ -225,13 +225,13 @@ owner — nobody else can do this, and app users can never read each other's dat
 node admin/stats.js
 ```
 
-It prints one row per user — questions covered (of 653), total answers, overall
+It prints one row per user — questions covered (of 658), total answers, overall
 accuracy, session count, last score, last-5-score trend, last active time — plus a
 per-domain accuracy line for each user. Example:
 
 ```
 ┌─────────┬──────────────────┬─────────┬──────────┬──────────┬────────────┬───────────────┐
-│  Email  │ Covered (of 653) │ Answers │ Accuracy │ Sessions │ Last score │ Last 5 scores │
+│  Email  │ Covered (of 658) │ Answers │ Accuracy │ Sessions │ Last score │ Last 5 scores │
 ├─────────┼──────────────────┼─────────┼──────────┼──────────┼────────────┼───────────────┤
 │ ana@…   │       212        │   340   │   78%    │    19    │ 84% (mock) │ 70% → … → 84% │
 └─────────┴──────────────────┴─────────┴──────────┴──────────┴────────────┴───────────────┘
@@ -292,7 +292,7 @@ In guest mode everything is stored in your **browser's localStorage** (key
 
 The dashboard shows:
 
-- **Stat tiles** — questions covered (of 653), overall accuracy, sessions completed,
+- **Stat tiles** — questions covered (of 658), overall accuracy, sessions completed,
   last session score.
 - **Score by session** (line chart) — your last 20 session scores, so you can see
   the trend. Hover any point for date/mode/score. The list below it shows your five

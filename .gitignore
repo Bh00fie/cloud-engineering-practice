@@ -1,0 +1,7 @@
+# Local secrets (e.g. GEMINI_API_KEY for `netlify dev`) — never commit
+.env
+.env.*
+
+# Netlify CLI local state
+.netlify/
+node_modules/

@@ -77,6 +77,9 @@
   .charts-row { grid-template-columns: 1fr 1fr; }
   @media (max-width: 760px) { .charts-row { grid-template-columns: 1fr; } }
   .card h2 { font-size: 15px; margin: 0 0 10px; font-weight: 600; }
+  .chart-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .chart-head h2 { margin: 0; }
+  .chart-head select { font-size: 13px; padding: 4px 8px; }
   button {
     font: inherit;
     font-size: 14px;
@@ -167,6 +170,28 @@
   .auth-link { background: none; border: none; color: var(--accent); padding: 0; font-size: 12px; cursor: pointer; }
   .auth-signedin-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 14px; }
   .sync-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+  .chat-card { margin-top: 14px; }
+  .chat-log {
+    display: grid; gap: 8px; margin-bottom: 12px;
+    max-height: 260px; overflow-y: auto;
+  }
+  .chat-msg {
+    font-size: 14px; line-height: 1.45; padding: 9px 12px; border-radius: 10px;
+    max-width: 85%; white-space: pre-wrap; overflow-wrap: break-word;
+  }
+  .chat-msg.user { background: var(--accent-soft); justify-self: end; }
+  .chat-msg.bot { background: var(--page); border: 1px solid var(--border); justify-self: start; }
+  .chat-msg.error { color: var(--bad); }
+  .chat-msg.thinking { color: var(--ink-3); font-style: italic; }
+  .chat-row { display: flex; gap: 8px; }
+  .chat-row input {
+    /* 16px minimum so iOS Safari doesn't zoom on focus */
+    font: inherit; font-size: 16px; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--page); color: var(--ink-1);
+    flex: 1 1 auto; min-width: 0;
+  }
+  .chat-note { font-size: 12px; color: var(--ink-3); margin: 8px 0 0; }
+
   #tooltip {
     position: fixed; pointer-events: none; z-index: 10; display: none;
     background: var(--ink-1); color: var(--page); font-size: 12px;
@@ -264,7 +289,16 @@
 
     <div class="row charts-row">
       <div class="card">
-        <h2>Score by session</h2>
+        <div class="chart-head">
+          <h2>Score by session</h2>
+          <select id="session-filter" aria-label="Filter sessions by quiz mode">
+            <option value="all">All modes</option>
+            <option value="quick">Quick quiz</option>
+            <option value="mock">Mock exam</option>
+            <option value="domain">Domain practice</option>
+            <option value="missed">Review missed</option>
+          </select>
+        </div>
         <div id="line-chart"></div>
         <div class="sessions-list" id="sessions-list"></div>
       </div>
@@ -307,6 +341,17 @@
         <button class="primary" id="q-check" onclick="checkAnswer()" disabled>Check answer</button>
         <button class="primary" id="q-next" onclick="nextQuestion()" hidden>Next</button>
       </div>
+    </div>
+
+    <div class="card chat-card">
+      <h2>Not sure what a term means? Ask.</h2>
+      <div class="chat-log" id="chat-log" hidden></div>
+      <form class="chat-row" id="chat-form">
+        <input id="chat-input" placeholder='e.g. "What is a service account?"'
+               autocomplete="off" maxlength="500">
+        <button class="primary" id="chat-send" type="submit">Ask</button>
+      </form>
+      <p class="chat-note">Explains GCP terms and services — it won't reveal the answer to the current question.</p>
     </div>
   </section>
 

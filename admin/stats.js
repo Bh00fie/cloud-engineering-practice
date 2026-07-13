@@ -87,7 +87,7 @@ function analyze(doc) {
   console.log(`\n${rows.length} user(s) — project ${PROJECT}\n`);
   console.table(rows.map((r) => ({
     Email: r.email,
-    "Covered (of 653)": r.covered,
+    "Covered (of 658)": r.covered,
     Answers: r.answered,
     "Accuracy": r.accuracy + "%",
     Sessions: r.sessions,

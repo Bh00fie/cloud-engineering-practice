@@ -14,8 +14,8 @@ const DOMAINS = {
   5: "Configuring access & security",
 };
 
-// Real-exam weighting (~20/18/22/20/20) applied to a 50-question mock.
-const MOCK_MIX = { 1: 10, 2: 9, 3: 11, 4: 10, 5: 10 };
+// Official exam-guide weighting (20/17.5/25/20/17.5) applied to a 50-question mock.
+const MOCK_MIX = { 1: 10, 2: 9, 3: 12, 4: 10, 5: 9 };
 
 const STORE_KEY = "gcp-ace-progress-v1";
 
@@ -153,6 +153,7 @@ function startQuiz(mode) {
   }
   lastMode = mode;
   quiz = { qs, i: 0, correct: 0, byDomain: {}, mode, checked: false, selection: new Set() };
+  resetChat();
   show("view-quiz");
   const timerEl = document.getElementById("timer");
   if (mode === "mock") {
@@ -386,6 +387,10 @@ function renderDashboard() {
 // Charts (inline SVG, no libraries)
 // ---------------------------------------------------------------------------
 
+const MODE_NAMES = { quick: "Quick", mock: "Mock", domain: "Domain", missed: "Missed" };
+
+let sessionFilter = "all"; // which quiz mode the "Score by session" chart shows
+
 const tooltip = () => document.getElementById("tooltip");
 
 function showTip(evt, html) {
@@ -403,16 +408,20 @@ function css(name) {
 
 function renderLineChart() {
   const host = document.getElementById("line-chart");
-  const sessions = store.sessions.slice(-20);
+  const pool = sessionFilter === "all"
+    ? store.sessions
+    : store.sessions.filter((s) => s.mode === sessionFilter);
+  const sessions = pool.slice(-20);
   const listEl = document.getElementById("sessions-list");
-  listEl.innerHTML = store.sessions.slice(-5).reverse().map((s) => {
+  listEl.innerHTML = pool.slice(-5).reverse().map((s) => {
     const pct = Math.round((s.correct / s.total) * 100);
-    const name = { quick: "Quick", mock: "Mock", domain: "Domain", missed: "Missed" }[s.mode] || s.mode;
+    const name = MODE_NAMES[s.mode] || s.mode;
     return `<div><span>${new Date(s.d).toLocaleDateString()} · ${name}</span><span>${s.correct}/${s.total} (${pct}%)</span></div>`;
   }).join("");
 
   if (sessions.length < 2) {
-    host.innerHTML = `<div class="chart-empty">Complete two sessions to see your trend.</div>`;
+    const what = sessionFilter === "all" ? "sessions" : `${MODE_NAMES[sessionFilter]} sessions`;
+    host.innerHTML = `<div class="chart-empty">Complete two ${what} to see your trend.</div>`;
     return;
   }
 
@@ -450,7 +459,7 @@ function renderLineChart() {
 
   host.querySelectorAll("circle").forEach((c) => {
     const p = pts[Number(c.dataset.i)];
-    const name = { quick: "Quick", mock: "Mock", domain: "Domain", missed: "Missed" }[p.s.mode] || p.s.mode;
+    const name = MODE_NAMES[p.s.mode] || p.s.mode;
     c.addEventListener("mousemove", (e) =>
       showTip(e, `${new Date(p.s.d).toLocaleDateString()} · ${name}<br>${p.s.correct}/${p.s.total} — ${p.pct}%`));
     c.addEventListener("mouseleave", hideTip);
@@ -508,6 +517,69 @@ function renderBarChart() {
 }
 
 // ---------------------------------------------------------------------------
+// Term-explainer chatbot (Gemini via the /api/chat Netlify function)
+// ---------------------------------------------------------------------------
+
+let chatHistory = []; // [{role: "user"|"model", text}] — cleared per quiz
+
+function chatAppend(role, text) {
+  const log = document.getElementById("chat-log");
+  log.hidden = false;
+  const div = document.createElement("div");
+  div.className = `chat-msg ${role}`;
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  return div;
+}
+
+function resetChat() {
+  chatHistory = [];
+  const log = document.getElementById("chat-log");
+  log.innerHTML = "";
+  log.hidden = true;
+}
+
+async function sendChat(e) {
+  e.preventDefault();
+  const input = document.getElementById("chat-input");
+  const send = document.getElementById("chat-send");
+  const text = input.value.trim();
+  if (!text || send.disabled) return;
+
+  input.value = "";
+  send.disabled = true;
+  chatAppend("user", text);
+  chatHistory.push({ role: "user", text });
+  const pending = chatAppend("bot thinking", "Thinking…");
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: chatHistory.slice(-10),
+        question: quiz ? currentQ().q : "",
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.reply) throw new Error(data.error || "The chatbot had a problem answering. Try again.");
+    pending.className = "chat-msg bot";
+    pending.textContent = data.reply;
+    chatHistory.push({ role: "model", text: data.reply });
+  } catch (err) {
+    pending.className = "chat-msg bot error";
+    pending.textContent = err.message === "Failed to fetch"
+      ? "Couldn't reach the chatbot — check your connection."
+      : err.message;
+    chatHistory.pop(); // let the user retry the same question
+  } finally {
+    send.disabled = false;
+    document.getElementById("chat-log").scrollTop = document.getElementById("chat-log").scrollHeight;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Progress export / import / reset
 // ---------------------------------------------------------------------------
 
@@ -551,12 +623,19 @@ function resetProgress() {
 // ---------------------------------------------------------------------------
 
 (function init() {
+  document.getElementById("session-filter").onchange = (e) => {
+    sessionFilter = e.target.value;
+    renderLineChart();
+  };
   const sel = document.getElementById("domain-select");
   sel.innerHTML = Object.entries(DOMAINS)
     .map(([d, name]) => `<option value="${d}">${d}. ${name}</option>`)
     .join("");
+  document.getElementById("chat-form").addEventListener("submit", sendChat);
   document.addEventListener("keydown", (e) => {
     if (!quiz || document.getElementById("view-quiz").hidden) return;
+    // Don't hijack keys while the user is typing in the chatbot.
+    if (e.target.closest && e.target.closest("#chat-form")) return;
     if (e.key === "Enter") {
       if (!quiz.checked && !document.getElementById("q-check").disabled) checkAnswer();
     } else if (!quiz.checked && e.key >= "1" && e.key <= "9") {
