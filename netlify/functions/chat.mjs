@@ -26,9 +26,9 @@ export default async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
-  const key = process.env.GEMINI_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (!key) {
-    return Response.json({ error: "Chat is not configured (missing GEMINI_API_KEY)." }, { status: 500 });
+    return Response.json({ error: "Chat is not configured (missing GEMINI_API_KEY / GOOGLE_API_KEY)." }, { status: 500 });
   }
 
   let body;
