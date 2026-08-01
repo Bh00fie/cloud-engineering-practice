@@ -132,6 +132,7 @@ footer.site-footer a { color: var(--ink-3); }
    see ads.js. Stays zero-height and invisible until a publisher ID + slot ID
    + visitor consent are all in place. */
 .ad-slot:empty { display: none; }
+.ad-slot:not(:empty) { margin-bottom: 14px; }
 .ad-slot .ad-label {
   font-size: 11px; color: var(--ink-3); text-transform: uppercase;
   letter-spacing: 0.04em; margin-bottom: 6px;
