@@ -133,8 +133,11 @@
     box-shadow: var(--shadow-md);
   }
   .hero-eyebrow {
+    /* ink-1 (not accent) on accent-soft: accent-on-accent-soft measures only
+       2.2:1 in dark mode — well under the 4.5:1 minimum for 12px text. The
+       tinted pill still reads as "accent" via its background. */
     display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
-    color: var(--accent); background: var(--accent-soft); padding: 4px 10px; border-radius: 999px; margin: 0 0 14px;
+    color: var(--ink-1); background: var(--accent-soft); padding: 4px 10px; border-radius: 999px; margin: 0 0 14px;
   }
   .hero-title { font-size: 27px; line-height: 1.25; font-weight: 700; margin: 0 0 10px; letter-spacing: -0.01em; }
   .hero-sub { font-size: 15.5px; color: var(--ink-2); margin: 0 0 20px; max-width: 58ch; }
@@ -380,7 +383,11 @@
     max-width: min(90vw, 420px); text-align: center;
   }
   .toast.show { opacity: 1; transform: translateY(0); }
-  .toast.toast-error { background: var(--bad); color: #fff; }
+  /* Fixed (not token-driven) dark red: --bad is tuned for text-on-light-surface
+     use and is too light against white text in dark mode (3.2:1) — this pairing
+     is checked independently at 6.5:1 in both themes since the toast is a
+     transient overlay, not a themed page surface. */
+  .toast.toast-error { background: #b3261e; color: #fff; }
   @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
 
   .domain-pick { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
