@@ -146,11 +146,12 @@ let timerEndsAt = null;
 function startQuiz(mode) {
   const qs = buildQuizSet(mode);
   if (qs.length === 0) {
-    alert(mode === "missed"
+    showToast(mode === "missed"
       ? "Nothing to review — you have no questions whose last answer was wrong. Nice."
       : "No questions available.");
     return;
   }
+  layoutAuthForHome();
   lastMode = mode;
   quiz = { qs, i: 0, correct: 0, byDomain: {}, mode, checked: false, selection: new Set() };
   resetChat();
@@ -212,7 +213,7 @@ function renderQuestion() {
     b.dataset.idx = origIdx;
     const key = document.createElement("span");
     key.className = "key";
-    key.textContent = String.fromCharCode(65 + pos) + ".";
+    key.textContent = String.fromCharCode(65 + pos);
     const body = document.createElement("span");
     body.textContent = q.o[origIdx];
     b.append(key, body);
@@ -299,6 +300,72 @@ function quitQuiz() {
   else { quiz = null; goHome(); }
 }
 
+// Accuracy band shared by the score ring and the per-domain breakdown bars —
+// keeps "good/warn/bad" meaning consistent everywhere on the results screen.
+function bandOf(pct) {
+  if (pct >= 80) return "good";
+  if (pct >= 50) return "warn";
+  return "bad";
+}
+
+function scoreLabel(pct, mode, answered) {
+  if (!answered) return "No questions answered";
+  if (mode === "mock") {
+    if (pct >= 70) return pct >= 90 ? "Excellent — well past the passing bar" : "Solid — at the typical passing bar";
+    return "Keep practicing — below the typical ~70% passing bar";
+  }
+  if (pct >= 90) return "Excellent";
+  if (pct >= 75) return "Great work";
+  if (pct >= 50) return "Getting there";
+  return "Keep practicing";
+}
+
+function setScoreRing(pct) {
+  const ring = document.getElementById("r-ring");
+  const circumference = 2 * Math.PI * 52;
+  ring.style.strokeDasharray = `${circumference}`;
+  ring.style.strokeDashoffset = `${circumference * (1 - pct / 100)}`;
+  ring.classList.remove("band-good", "band-warn", "band-bad");
+  ring.classList.add(`band-${bandOf(pct)}`);
+}
+
+const FLAG_ICON = `<svg viewBox="0 0 20 20" width="12" height="12" aria-hidden="true"><path d="M5 17V3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M5 4.2l8.5 2.1c1 .25 1 1.65 0 1.9L5 10.3" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="none"/></svg>`;
+
+// Set alongside the breakdown so the "Practice weakest domain" button (in the
+// results actions row) knows which domain to jump into.
+let lastWeakestDomain = null;
+
+function renderResultsBreakdown(byDomain, mode) {
+  const rows = Object.entries(byDomain)
+    .map(([d, [c, t]]) => ({ d: Number(d), c, t, pct: Math.round((c / t) * 100) }))
+    .sort((a, b) => a.pct - b.pct || a.d - b.d);
+
+  lastWeakestDomain = (mode === "domain" || rows.length === 0 || rows[0].pct === 100) ? null : rows[0];
+  const cta = document.getElementById("r-weakest-cta");
+  cta.hidden = !lastWeakestDomain;
+  if (lastWeakestDomain) {
+    cta.textContent = `Practice Domain ${lastWeakestDomain.d}: ${DOMAINS[lastWeakestDomain.d]}`;
+  }
+
+  document.getElementById("r-breakdown").innerHTML = rows.map((row) => {
+    const isWeak = lastWeakestDomain && row.d === lastWeakestDomain.d;
+    const band = bandOf(row.pct);
+    return `<div class="domain-bar-row">
+      <div class="domain-bar-head">
+        <span class="domain-bar-name">${row.d}. ${DOMAINS[row.d]}${isWeak ? `<span class="domain-flag">${FLAG_ICON}Focus here</span>` : ""}</span>
+        <span class="domain-bar-value">${row.c}/${row.t} · ${row.pct}%</span>
+      </div>
+      <div class="domain-bar-track"><div class="domain-bar-fill band-${band}" style="width:${row.pct}%"></div></div>
+    </div>`;
+  }).join("");
+}
+
+function practiceWeakestDomain() {
+  if (!lastWeakestDomain) return;
+  document.getElementById("domain-select").value = String(lastWeakestDomain.d);
+  startQuiz("domain");
+}
+
 function finishQuiz(partial) {
   stopTimer();
   const answered = Object.values(quiz.byDomain).reduce((s, [, t]) => s + t, 0);
@@ -313,20 +380,18 @@ function finishQuiz(partial) {
     saveStore();
   }
   const pct = answered ? Math.round((quiz.correct / answered) * 100) : 0;
-  document.getElementById("r-score").textContent = `${pct}%`;
   const modeName = { quick: "Quick quiz", mock: "Mock exam", domain: "Domain practice", missed: "Review missed" }[quiz.mode];
-  document.getElementById("r-sub").textContent =
-    `${quiz.correct} of ${answered} correct — ${modeName}${partial ? " (ended early)" : ""}` +
-    (quiz.mode === "mock" ? (pct >= 70 ? " · At the typical ~70% passing bar. Keep going!" : " · The typical passing bar is ~70%.") : "");
 
-  const rows = Object.entries(quiz.byDomain)
-    .sort((a, b) => a[0] - b[0])
-    .map(([d, [c, t]]) =>
-      `<tr><td>${DOMAINS[d]}</td><td class="num">${c}/${t}</td><td class="num">${Math.round((c / t) * 100)}%</td></tr>`)
-    .join("");
-  document.getElementById("r-table").innerHTML =
-    `<tr><th>Domain</th><th>Correct</th><th>Accuracy</th></tr>${rows}`;
+  document.getElementById("r-score").textContent = `${pct}%`;
+  document.getElementById("r-score-label").textContent = scoreLabel(pct, quiz.mode, answered);
+  setScoreRing(answered ? pct : 0);
+  document.getElementById("r-sub").textContent =
+    `${quiz.correct} of ${answered} correct — ${modeName}${partial ? " (ended early)" : ""}`;
+
+  renderResultsBreakdown(quiz.byDomain, quiz.mode);
   document.getElementById("r-again").hidden = quiz.mode === "domain";
+  layoutAuthForResults();
+
   quiz = null;
   show("view-results");
 }
@@ -343,8 +408,47 @@ function show(id) {
 }
 
 function goHome() {
+  layoutAuthForHome();
   renderDashboard();
   show("view-home");
+}
+
+// ---------------------------------------------------------------------------
+// Account form placement — one #auth-card DOM node is shuttled between a
+// compact header affordance (default) and an expanded slot on the results
+// screen, so a stranger sees the sign-in form only after they have a score
+// worth saving. auth.js only ever manipulates element IDs, not their parent,
+// so moving the node is safe regardless of which slot it currently lives in.
+// ---------------------------------------------------------------------------
+
+function toggleAccountForm(btn) {
+  const form = document.getElementById("account-form");
+  const open = form.classList.toggle("expanded");
+  btn.setAttribute("aria-expanded", String(open));
+}
+
+function layoutAuthForHome() {
+  const card = document.getElementById("auth-card");
+  const target = document.getElementById("account-bar-header");
+  if (card && target && card.parentElement !== target) target.appendChild(card);
+  const saveCard = document.getElementById("r-save-card");
+  if (saveCard) saveCard.hidden = true;
+  const heading = document.getElementById("account-form-heading");
+  if (heading) heading.textContent = "Save your progress";
+}
+
+function layoutAuthForResults() {
+  const card = document.getElementById("auth-card");
+  const saveCard = document.getElementById("r-save-card");
+  if (!card || card.hidden) { if (saveCard) saveCard.hidden = true; return; } // Firebase not configured — guest mode only
+  const signedIn = document.getElementById("auth-signedin");
+  if (signedIn && !signedIn.hidden) { if (saveCard) saveCard.hidden = true; return; } // already signed in — nothing to prompt
+  const target = document.getElementById("r-save-card-inner");
+  if (target && card.parentElement !== target) target.appendChild(card);
+  document.getElementById("account-form")?.classList.add("expanded");
+  const heading = document.getElementById("account-form-heading");
+  if (heading) heading.textContent = "Save this result";
+  if (saveCard) saveCard.hidden = false;
 }
 
 function allTimeStats() {
@@ -355,32 +459,49 @@ function allTimeStats() {
   return { c, w, seen, answered: c + w };
 }
 
+// Small monochrome stat-tile icons (inline SVG, no icon library) — purely
+// decorative reinforcement of each tile's meaning, never the only indicator.
+const TILE_ICONS = {
+  covered: `<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M4 4.5h8a2 2 0 0 1 2 2V16H6a2 2 0 0 1-2-2V4.5Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M14 6.5h1a1 1 0 0 1 1 1V16h-2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>`,
+  accuracy: `<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="0.9" fill="currentColor"/></svg>`,
+  sessions: `<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><rect x="3.5" y="4.5" width="13" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 8h13M7 3v3M13 3v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+  last: `<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M10 3l1.9 4 4.3.5-3.2 3 .9 4.3L10 12.7 6.1 14.8l.9-4.3-3.2-3 4.3-.5L10 3Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>`,
+};
+
 function renderDashboard() {
-  const s = allTimeStats();
-  const acc = s.answered ? Math.round((s.c / s.answered) * 100) : null;
-  const last = store.sessions[store.sessions.length - 1];
-  const lastPct = last ? Math.round((last.correct / last.total) * 100) : null;
+  const isFirstRun = store.sessions.length === 0;
+  document.getElementById("hero-firstrun").hidden = !isFirstRun;
+  document.getElementById("stat-tiles-heading").hidden = isFirstRun;
+  document.getElementById("stat-tiles").hidden = isFirstRun;
+  document.getElementById("charts-row").hidden = isFirstRun;
+
+  if (!isFirstRun) {
+    const s = allTimeStats();
+    const acc = s.answered ? Math.round((s.c / s.answered) * 100) : null;
+    const last = store.sessions[store.sessions.length - 1];
+    const lastPct = last ? Math.round((last.correct / last.total) * 100) : null;
+
+    const tiles = [
+      { icon: TILE_ICONS.covered, label: "Questions covered", value: `${s.seen}`, sub: `of ${BANK.length} in the bank` },
+      { icon: TILE_ICONS.accuracy, label: "Overall accuracy", value: acc === null ? "—" : `${acc}%`, sub: `${s.c} right · ${s.w} wrong` },
+      { icon: TILE_ICONS.sessions, label: "Sessions completed", value: `${store.sessions.length}`, sub: last ? `last: ${new Date(last.d).toLocaleDateString()}` : "none yet" },
+      { icon: TILE_ICONS.last, label: "Last session score", value: lastPct === null ? "—" : `${lastPct}%`, sub: last ? `${last.correct}/${last.total} correct` : "start a quiz" },
+    ];
+    document.getElementById("stat-tiles").innerHTML = tiles.map((t) =>
+      `<div class="card stat"><div class="stat-icon">${t.icon}</div><div class="label">${t.label}</div><div class="value">${t.value}</div><div class="sub">${t.sub}</div></div>`
+    ).join("");
+
+    renderLineChart();
+    renderBarChart();
+  }
+
   const missedCount = BANK.filter((q) => store.attempts[q.id] && store.attempts[q.id].last === 0).length;
-
-  const tiles = [
-    { label: "Questions covered", value: `${s.seen}`, sub: `of ${BANK.length} in the bank` },
-    { label: "Overall accuracy", value: acc === null ? "—" : `${acc}%`, sub: `${s.c} right · ${s.w} wrong` },
-    { label: "Sessions completed", value: `${store.sessions.length}`, sub: last ? `last: ${new Date(last.d).toLocaleDateString()}` : "none yet" },
-    { label: "Last session score", value: lastPct === null ? "—" : `${lastPct}%`, sub: last ? `${last.correct}/${last.total} correct` : "start a quiz" },
-  ];
-  document.getElementById("stat-tiles").innerHTML = tiles.map((t) =>
-    `<div class="card stat"><div class="label">${t.label}</div><div class="value">${t.value}</div><div class="sub">${t.sub}</div></div>`
-  ).join("");
-
   document.getElementById("missed-desc").textContent = missedCount
     ? `Retry the ${missedCount} question${missedCount === 1 ? "" : "s"} you last answered incorrectly.`
     : "Retry every question you last answered incorrectly.";
   document.getElementById("missed-btn").disabled = missedCount === 0;
   document.getElementById("bank-note").textContent =
     `${BANK.length} questions across 5 domains. Progress lives in this browser's local storage.`;
-
-  renderLineChart();
-  renderBarChart();
 }
 
 // ---------------------------------------------------------------------------
@@ -603,20 +724,63 @@ function importProgress(input) {
       store = s;
       saveStore();
       renderDashboard();
+      showToast("Progress imported.");
     } catch (e) {
-      alert("That file doesn't look like an exported progress file.");
+      showToast("That file doesn't look like an exported progress file.", { type: "error" });
     }
     input.value = "";
   };
   reader.readAsText(file);
 }
 
-function resetProgress() {
-  if (!confirm("Delete all progress (attempts and session history)? This cannot be undone.")) return;
+// Reset uses an inline confirm row instead of the OS confirm() dialog — see
+// #reset-confirm in index.html — so it doesn't feel like a jarring native
+// popup on mobile.
+function askResetProgress() {
+  document.getElementById("reset-btn").hidden = true;
+  document.getElementById("reset-confirm").hidden = false;
+}
+
+function cancelResetProgress() {
+  document.getElementById("reset-btn").hidden = false;
+  document.getElementById("reset-confirm").hidden = true;
+}
+
+function confirmResetProgress() {
   store = { attempts: {}, sessions: [] };
   saveStore();
+  cancelResetProgress();
   renderDashboard();
+  showToast("Progress reset.");
 }
+
+// ---------------------------------------------------------------------------
+// Lightweight toast (replaces alert() for non-blocking notices) — aria-live
+// region announced to screen readers, auto-dismisses, respects reduced motion
+// via the global transition-duration override in index.html's <style>.
+// ---------------------------------------------------------------------------
+
+function showToast(message, opts) {
+  const type = (opts && opts.type) || "info";
+  let region = document.getElementById("toast-region");
+  if (!region) {
+    region = document.createElement("div");
+    region.id = "toast-region";
+    region.setAttribute("aria-live", "polite");
+    region.setAttribute("role", "status");
+    document.body.appendChild(region);
+  }
+  const el = document.createElement("div");
+  el.className = `toast toast-${type}`;
+  el.textContent = message;
+  region.appendChild(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  setTimeout(() => {
+    el.classList.remove("show");
+    setTimeout(() => el.remove(), 250);
+  }, 4200);
+}
+window.showToast = showToast;
 
 // ---------------------------------------------------------------------------
 // Init
@@ -631,6 +795,17 @@ function resetProgress() {
   sel.innerHTML = Object.entries(DOMAINS)
     .map(([d, name]) => `<option value="${d}">${d}. ${name}</option>`)
     .join("");
+
+  // Deep-link support: the static /domains/<slug>/ study-guide pages link
+  // back here with ?domain=N so "Practice this domain" lands on the right
+  // pre-selected mode instead of a generic homepage. Purely cosmetic —
+  // falls through quietly if the param is absent or invalid.
+  const domainParam = Number(new URLSearchParams(location.search).get("domain"));
+  if (domainParam >= 1 && domainParam <= 5) {
+    sel.value = String(domainParam);
+    document.getElementById("domain-select")?.closest(".mode-card")?.scrollIntoView({ block: "center" });
+  }
+
   document.getElementById("chat-form").addEventListener("submit", sendChat);
   document.addEventListener("keydown", (e) => {
     if (!quiz || document.getElementById("view-quiz").hidden) return;
@@ -643,5 +818,30 @@ function resetProgress() {
       if (pos < quiz.order.length) toggleOption(quiz.order[pos]);
     }
   });
+
+  // Header "Save progress" popover: close on outside click or Escape. Only
+  // acts while the account card is in its header slot (not on the results
+  // screen, where the form is meant to stay open inline).
+  document.addEventListener("click", (e) => {
+    const card = document.getElementById("auth-card");
+    const bar = document.getElementById("account-bar-header");
+    if (!card || card.parentElement !== bar) return;
+    const form = document.getElementById("account-form");
+    if (form && form.classList.contains("expanded") && !bar.contains(e.target)) {
+      form.classList.remove("expanded");
+      document.getElementById("account-toggle-btn")?.setAttribute("aria-expanded", "false");
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    const form = document.getElementById("account-form");
+    if (form && form.classList.contains("expanded")) {
+      form.classList.remove("expanded");
+      document.getElementById("account-toggle-btn")?.setAttribute("aria-expanded", "false");
+      document.getElementById("account-toggle-btn")?.focus();
+    }
+  });
+
+  layoutAuthForHome();
   renderDashboard();
 })();
