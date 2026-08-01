@@ -147,9 +147,20 @@ URLs, JSON-LD, sitemap, robots.txt) is derived from it. To change domains:
 3. Run `node tools/build-pages.mjs` and commit the result.
 
 The site currently serves from **cloudaceprep.com** (registered at names.co.uk, DNS
-delegated to Netlify). The old `gcpcloudengineering.netlify.app` subdomain still
-resolves and 301-redirects to the apex, which Netlify does automatically once the
-custom domain is set as primary — leave it in place so existing links don't break.
+delegated to Netlify). `www.cloudaceprep.com` 301-redirects to the apex automatically.
+
+The old `gcpcloudengineering.netlify.app` subdomain does **not** redirect — it keeps
+serving the site with a `200`. Duplicate content is handled by the canonical tag
+(every page points at `cloudaceprep.com`), so search engines consolidate correctly and
+old links keep working. If you ever want a hard redirect instead, add to `netlify.toml`:
+
+```toml
+[[redirects]]
+  from = "https://gcpcloudengineering.netlify.app/*"
+  to = "https://cloudaceprep.com/:splat"
+  status = 301
+  force = true
+```
 
 ---
 
