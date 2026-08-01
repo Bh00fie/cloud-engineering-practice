@@ -659,7 +659,12 @@
          hasn't finished answering yet. -->
     <div class="card ad-slot" id="quiz-ad-slot" data-ad-name="quizFeedback" hidden></div>
 
-    <div class="card chat-card">
+    <!-- Chat is switched off: GEMINI_API_KEY has been removed from the Netlify
+         environment, so /api/chat returns 500 and this panel would only show an
+         error. To turn it back on, restore GEMINI_API_KEY in Netlify (the
+         endpoint is now origin-checked and rate-limited, see
+         netlify/functions/chat.mjs) and delete the `hidden` attribute below. -->
+    <div class="card chat-card" hidden>
       <h2>Not sure what a term means? Ask.</h2>
       <div class="chat-log" id="chat-log" hidden></div>
       <form class="chat-row" id="chat-form">
