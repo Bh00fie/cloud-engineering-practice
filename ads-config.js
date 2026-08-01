@@ -22,16 +22,17 @@ window.ADS_CONFIG = {
   // Your AdSense publisher ID, e.g. "ca-pub-1234567890123456". Leave "" until
   // the AdSense application is approved — this is the master switch: every
   // ad-related script and DOM node on the site stays inert while it's empty.
-  ADSENSE_CLIENT: "",
+  ADSENSE_CLIENT: "ca-pub-9122089286210192",
 
   // Per-placement ad unit slot IDs from the AdSense dashboard. A placement
   // left "" simply never renders, even once ADSENSE_CLIENT is filled in —
-  // so units can be turned on one at a time.
+  // so units can be turned on one at a time. MVP: results only; the other
+  // three light up the same way the moment their slot IDs exist.
   SLOTS: {
-    home: "",         // home screen, below the fold, one unit
-    quizFeedback: "", // quiz screen, only after an answer is checked
-    results: "",      // results screen — the reserved #results-promo-slot
-    contentPage: "",  // domains/* and study-guide/ in-content placement
+    home: "",              // home screen, below the fold, one unit
+    quizFeedback: "",      // quiz screen, only after an answer is checked
+    results: "9764657993", // results screen — the reserved #results-promo-slot ("Side by side" unit)
+    contentPage: "",       // domains/* and study-guide/ in-content placement
   },
 
   // Optional affiliate program IDs. Not read by any code yet — present so a

@@ -1,11 +1,4 @@
-# ads.txt — placeholder.
-#
-# GCP ACE Practice has not yet been approved for Google AdSense, so there is no
-# publisher ID to declare. This file exists so the URL resolves (some ad
-# systems treat a missing ads.txt as a red flag) but currently authorizes no
-# sellers.
-#
-# Once AdSense approves the site: fill in ADSENSE_CLIENT in ads-config.js and
-# re-run `node tools/build-pages.mjs` — it will regenerate this file with
-# the standard line:
-#   google.com, pub-<your-id>, DIRECT, f08c47fec0942fa0
+# ads.txt — authorizes Google AdSense to sell ad inventory on https://cloudaceprep.com
+# Generated from ads-config.js by tools/build-pages.mjs — edit ADSENSE_CLIENT
+# there, not this file directly.
+google.com, pub-9122089286210192, DIRECT, f08c47fec0942fa0
