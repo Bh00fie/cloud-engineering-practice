@@ -16,5 +16,5 @@ window.ANALYTICS_CONFIG = {
   // e.g. "G-XXXXXXXXXX". Leave "" to keep analytics off — this is the master
   // switch: every analytics-related script and the consent banner stay
   // inert while it's empty.
-  GA4_MEASUREMENT_ID: "",
+  GA4_MEASUREMENT_ID: "G-C3HQWVYGTQ",
 };
