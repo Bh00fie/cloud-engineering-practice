@@ -170,6 +170,30 @@ old links keep working. If you ever want a hard redirect instead, add to `netlif
 
 ---
 
+## Analytics
+
+The site has a **GA4 (Google Analytics 4)** integration wired the same way as ads —
+inert until you turn it on, no third-party requests until then.
+
+- **`analytics-config.js`** — master config (same pattern as `firebase-config.js` /
+  `ads-config.js`): `GA4_MEASUREMENT_ID`, e.g. `"G-XXXXXXXXXX"`. **Ships empty.**
+- **`analytics.js`** — loader + its own consent gate, loaded on every page. Does nothing —
+  no `gtag.js` request, no cookie, no banner — unless `GA4_MEASUREMENT_ID` is non-empty and
+  the visitor has explicitly accepted the on-site consent notice. Independent of `ads.js`'s
+  consent banner by design: today only this one can ever fire, since AdSense isn't configured.
+  When you do turn ads on, merge the two banners into one so a visitor is never asked twice —
+  that's a deliberate TODO, not an oversight.
+- Custom events fire via a global `window.trackEvent(name, params)` (always defined, always a
+  safe no-op until analytics is active): `quiz_start` in `startQuiz()`, `quiz_complete` in
+  `finishQuiz()` (`app.js`), and `signup` after a successful sign-up (`auth.js`).
+
+### Turning analytics on
+
+1. Create a GA4 property at [analytics.google.com](https://analytics.google.com) for
+   `cloudaceprep.com`, get its Measurement ID.
+2. Set `GA4_MEASUREMENT_ID` in `analytics-config.js`.
+3. Redeploy — no build step needed, this file is loaded directly.
+
 ## Advertising, consent & policy pages
 
 The site is wired for **Google AdSense** but AdSense has **not been applied for / approved

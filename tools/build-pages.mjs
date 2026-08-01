@@ -321,8 +321,11 @@ const FOOTER = (depth) => `</div>
   </div>
   <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
 </footer>
-<!-- Ad config + loader — inert (no script requests, no DOM insertion) while
-     ADS_CONFIG.ADSENSE_CLIENT is empty, which is the committed default. -->
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="${depth}analytics-config.js"></script>
+<script defer src="${depth}analytics.js"></script>
 <script defer src="${depth}ads-config.js"></script>
 <script defer src="${depth}ads.js"></script>
 </body>

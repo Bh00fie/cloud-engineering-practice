@@ -112,7 +112,10 @@ function initAuth() {
 
   el("auth-signup-btn").onclick = async () => {
     errBox.hidden = true;
-    try { await createUserWithEmailAndPassword(auth, ...creds()); }
+    try {
+      await createUserWithEmailAndPassword(auth, ...creds());
+      window.trackEvent?.("signup");
+    }
     catch (e) { showError(e); }
   };
 

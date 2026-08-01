@@ -154,6 +154,7 @@ function startQuiz(mode) {
   layoutAuthForHome();
   lastMode = mode;
   quiz = { qs, i: 0, correct: 0, byDomain: {}, mode, checked: false, selection: new Set() };
+  window.trackEvent?.("quiz_start", { mode, question_count: qs.length });
   resetChat();
   show("view-quiz");
   const timerEl = document.getElementById("timer");
@@ -395,6 +396,7 @@ function finishQuiz(partial) {
   }
   const pct = answered ? Math.round((quiz.correct / answered) * 100) : 0;
   const modeName = { quick: "Quick quiz", mock: "Mock exam", domain: "Domain practice", missed: "Review missed" }[quiz.mode];
+  window.trackEvent?.("quiz_complete", { mode: quiz.mode, score_pct: pct, question_count: answered, partial: !!partial });
 
   document.getElementById("r-score").textContent = `${pct}%`;
   document.getElementById("r-score-label").textContent = scoreLabel(pct, quiz.mode, answered);

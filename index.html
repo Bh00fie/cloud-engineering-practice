@@ -750,6 +750,12 @@
 <script defer src="app.js"></script>
 <script defer src="firebase-config.js"></script>
 <script type="module" src="auth.js"></script>
+<!-- Analytics config + loader — see analytics-config.js for the master
+     on/off switch. Both are inert (no script requests, no cookies) while
+     ANALYTICS_CONFIG.GA4_MEASUREMENT_ID is empty, which is the committed
+     default. -->
+<script defer src="analytics-config.js"></script>
+<script defer src="analytics.js"></script>
 <!-- Ad config + loader — see ads-config.js for the master on/off switch.
      Both are inert (no script requests, no DOM insertion) while
      ADS_CONFIG.ADSENSE_CLIENT is empty, which is the committed default. -->
