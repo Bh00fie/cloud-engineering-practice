@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choosing a Database on Google Cloud — GCP ACE Exam Guide</title>
+<meta name="description" content="Cloud SQL vs Spanner vs Firestore vs Bigtable vs BigQuery for the GCP ACE exam — the exact decision framework the exam tests, plus free sample questions with explanations.">
+<link rel="canonical" href="https://cloudaceprep.com/topics/choosing-a-database/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Choosing a Database on Google Cloud — GCP ACE Exam Guide">
+<meta property="og:description" content="Cloud SQL vs Spanner vs Firestore vs Bigtable vs BigQuery for the GCP ACE exam — the exact decision framework the exam tests, plus free sample questions with explanations.">
+<meta property="og:url" content="https://cloudaceprep.com/topics/choosing-a-database/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Choosing a Database on Google Cloud — GCP ACE Exam Guide">
+<meta name="twitter:description" content="Cloud SQL vs Spanner vs Firestore vs Bigtable vs BigQuery for the GCP ACE exam — the exact decision framework the exam tests, plus free sample questions with explanations.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Topics","item":"https://cloudaceprep.com/topics/"},{"@type":"ListItem","position":4,"name":"Choosing a Database on Google Cloud","item":"https://cloudaceprep.com/topics/choosing-a-database/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE: Choosing a Database on Google Cloud — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Choosing a Database on Google Cloud"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"Your team needs a managed PostgreSQL 16 instance for a new internal service. Which command creates it?","acceptedAnswer":{"@type":"Answer","text":"gcloud sql instances create pgmain --database-version=POSTGRES_16 --region=us-central1 --tier=db-custom-2-8192 — Cloud SQL instances are created via gcloud sql instances create with engine version, region, and machine tier. It's not a Compute Engine instance flag, and kubectl doesn't provision Cloud SQL."}},{"@type":"Question","name":"You need a relational database with SQL, transactions, and modest scale (hundreds of GB) for a web app, with minimal ops. Which service?","acceptedAnswer":{"@type":"Answer","text":"Cloud SQL — Cloud SQL is managed MySQL/PostgreSQL/SQL Server for conventional relational workloads at single-region scale. Spanner is for globally distributed, horizontally scalable relational needs (and costs accordingly); Bigtable is NoSQL wide-column; Memorystore is an in-memory cache."}},{"@type":"Question","name":"Your Cloud Run app must reach its Cloud SQL database securely, without password sprawl or public exposure. What is the recommended way?","acceptedAnswer":{"@type":"Answer","text":"Cloud SQL connectors / built-in Cloud SQL connection (which handle encryption and IAM auth) rather than exposing a public IP with passwords — Cloud Run integrates with the Cloud SQL Auth Proxy mechanism natively (--add-cloudsql-instances / connector libraries), giving encrypted, IAM-authorized connectivity. Whitelisting the world is a breach waiting to happen."}},{"@type":"Question","name":"A global retail platform needs a relational database with strong consistency across regions and effectively unlimited horizontal write scaling. Which service?","acceptedAnswer":{"@type":"Answer","text":"Cloud Spanner — Spanner uniquely combines relational schema/SQL, strong external consistency, and horizontal scaling across regions. Cloud SQL replicas scale reads only (single write primary); Firestore is a document store; BigQuery is analytics, not OLTP."}},{"@type":"Question","name":"Which TWO settings should production Cloud SQL instances almost always enable? ","acceptedAnswer":{"@type":"Answer","text":"Automated backups (with point-in-time recovery) — Backups+PITR protect data; HA protects uptime through zone failure. World-open public IP is a security hole, and shared-core tiers are for dev/test."}},{"@type":"Question","name":"You're ingesting time-series IoT metrics at millions of writes per second with single-digit-millisecond reads by row key. Which database?","acceptedAnswer":{"@type":"Answer","text":"Bigtable — Bigtable is the wide-column NoSQL store built for massive throughput and low-latency key-based access — time series and IoT are its flagship use cases. Cloud SQL can't reach that write scale; Firestore has per-document write limits; Spanner could work but is relational and costlier for this pattern."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / <a href="../../topics/">Topics</a> / Choosing a Database on Google Cloud</p>
+  <h1>Choosing a Database on Google Cloud</h1>
+  <p class="lede">What actually gets tested on the Google Cloud Associate Cloud Engineer exam,
+  the traps to know, and 6 free sample questions with full explanations.</p>
+
+  <p>This is one of the exam's cleanest decision-framework topics because each database has a genuinely distinct sweet spot. <strong>Cloud SQL</strong> is managed MySQL/PostgreSQL/SQL Server for conventional relational workloads at single-region scale — read replicas scale reads, but writes stay bound to the primary. <strong>Cloud Spanner</strong> is the answer whenever a scenario needs <em>both</em> horizontal scale <em>and</em> strong relational consistency across regions at once — that specific combination is Spanner's entire reason to exist, and no other Google Cloud database offers it.</p>
+  <p><strong>Firestore</strong> is the serverless NoSQL document database built for mobile/web apps — client SDKs, live listeners, offline persistence — while <strong>Bigtable</strong> is the wide-column NoSQL store built for massive throughput and low-latency key-based access, with time-series and IoT data as its flagship use case; it has no client-side sync and is a poor fit for anything mobile-facing. <strong>BigQuery</strong> rounds this out as the answer for analytics over huge datasets with SQL — it's not meant to be an application's transactional backend at all.</p>
+  <p><strong>Cloud SQL</strong> deserves its own operational detail beyond the choice itself: automated backups and point-in-time recovery are how you protect it day to day, and it supports high-availability configuration (a standby in a different zone) for scenarios that specifically call out failover or uptime requirements — a separate consideration from which database engine to pick in the first place.</p>
+
+  <div class="card">
+    <h3>Exam tips for this topic</h3>
+    <ul>
+      <li>Spanner is the answer whenever a scenario needs BOTH horizontal scale AND strong relational consistency across regions — that exact combination is unique to it.</li>
+      <li>Bigtable is for massive-throughput, low-latency, key-based access (time series, IoT); Firestore is for mobile/web apps that need client sync and offline support. Don&#39;t swap them.</li>
+      <li>BigQuery is for SQL analytics over large datasets, not as an application&#39;s transactional backend — a scenario asking for both should point you elsewhere.</li>
+    </ul>
+  </div>
+
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
+  <h2>Sample questions — Choosing a Database on Google Cloud</h2>
+  <p>These 6 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">Cloud SQL</span>
+    <p class="qtext">Your team needs a managed PostgreSQL 16 instance for a new internal service. Which command creates it?</p>
+    <ul class="opts">
+      <li class="correct">gcloud sql instances create pgmain --database-version=POSTGRES_16 --region=us-central1 --tier=db-custom-2-8192<span class="tag">Correct</span></li>
+      <li>gcloud compute instances create --postgres</li>
+      <li>gcloud postgres new pgmain</li>
+      <li>kubectl create cloudsql</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud SQL instances are created via gcloud sql instances create with engine version, region, and machine tier. It&#39;s not a Compute Engine instance flag, and kubectl doesn&#39;t provision Cloud SQL.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Database choice</span>
+    <p class="qtext">You need a relational database with SQL, transactions, and modest scale (hundreds of GB) for a web app, with minimal ops. Which service?</p>
+    <ul class="opts">
+      <li class="correct">Cloud SQL<span class="tag">Correct</span></li>
+      <li>Cloud Spanner</li>
+      <li>Bigtable</li>
+      <li>Memorystore</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud SQL is managed MySQL/PostgreSQL/SQL Server for conventional relational workloads at single-region scale. Spanner is for globally distributed, horizontally scalable relational needs (and costs accordingly); Bigtable is NoSQL wide-column; Memorystore is an in-memory cache.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud SQL</span>
+    <p class="qtext">Your Cloud Run app must reach its Cloud SQL database securely, without password sprawl or public exposure. What is the recommended way?</p>
+    <ul class="opts">
+      <li class="correct">Cloud SQL connectors / built-in Cloud SQL connection (which handle encryption and IAM auth) rather than exposing a public IP with passwords<span class="tag">Correct</span></li>
+      <li>Public IP with 0.0.0.0/0 authorized</li>
+      <li>SSH tunnel through a bastion VM</li>
+      <li>Exporting the DB to a bucket nightly</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud Run integrates with the Cloud SQL Auth Proxy mechanism natively (--add-cloudsql-instances / connector libraries), giving encrypted, IAM-authorized connectivity. Whitelisting the world is a breach waiting to happen.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Database choice</span>
+    <p class="qtext">A global retail platform needs a relational database with strong consistency across regions and effectively unlimited horizontal write scaling. Which service?</p>
+    <ul class="opts">
+      <li class="correct">Cloud Spanner<span class="tag">Correct</span></li>
+      <li>Cloud SQL with read replicas</li>
+      <li>Firestore</li>
+      <li>BigQuery</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Spanner uniquely combines relational schema/SQL, strong external consistency, and horizontal scaling across regions. Cloud SQL replicas scale reads only (single write primary); Firestore is a document store; BigQuery is analytics, not OLTP.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud SQL</span>
+    <p class="qtext">Which TWO settings should production Cloud SQL instances almost always enable? </p>
+    <ul class="opts">
+      <li class="correct">Automated backups (with point-in-time recovery)<span class="tag">Correct</span></li>
+      <li class="correct">High availability (regional) configuration<span class="tag">Correct</span></li>
+      <li>Public IP open to 0.0.0.0/0</li>
+      <li>The smallest shared-core tier</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Backups+PITR protect data; HA protects uptime through zone failure. World-open public IP is a security hole, and shared-core tiers are for dev/test.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Database choice</span>
+    <p class="qtext">You&#39;re ingesting time-series IoT metrics at millions of writes per second with single-digit-millisecond reads by row key. Which database?</p>
+    <ul class="opts">
+      <li class="correct">Bigtable<span class="tag">Correct</span></li>
+      <li>Cloud SQL</li>
+      <li>Firestore</li>
+      <li>Cloud Spanner</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Bigtable is the wide-column NoSQL store built for massive throughput and low-latency key-based access — time series and IoT are its flagship use cases. Cloud SQL can&#39;t reach that write scale; Firestore has per-document write limits; Spanner could work but is relational and costlier for this pattern.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this for real</h3>
+    <p>The app has dozens more questions on this and every other topic, with instant scoring,
+    spaced repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=2#view-home">Start practicing →</a>
+  </div>
+
+  <h2>This topic shows up in</h2>
+  <div class="domain-grid">
+    <a href="../../domains/planning-and-configuring-a-cloud-solution/"><strong>Domain 2</strong>Planning &amp; Configuring a Cloud Solution</a>
+      <a href="../../domains/deploying-and-implementing-a-cloud-solution/"><strong>Domain 3</strong>Deploying &amp; Implementing a Cloud Solution</a>
+  </div>
+
+  <h2>Other topics</h2>
+  <div class="domain-grid">
+    <a href="../iam-roles-and-permissions/"><strong>Topic</strong>IAM Roles &amp; Permissions</a>
+      <a href="../service-accounts-and-identity/"><strong>Topic</strong>Service Accounts &amp; Identity</a>
+      <a href="../billing-pricing-and-cost-management/"><strong>Topic</strong>Billing, Pricing &amp; Cost Management</a>
+      <a href="../google-kubernetes-engine-gke/"><strong>Topic</strong>Google Kubernetes Engine (GKE)</a>
+      <a href="../gcloud-cli-commands/"><strong>Topic</strong>gcloud CLI Commands</a>
+      <a href="../choosing-the-right-compute-option/"><strong>Topic</strong>Choosing the Right Compute Option</a>
+      <a href="../compute-engine-deployment-and-operations/"><strong>Topic</strong>Compute Engine Deployment &amp; Operations</a>
+      <a href="../cloud-monitoring-logging-and-audit-logs/"><strong>Topic</strong>Cloud Monitoring, Logging &amp; Audit Logs</a>
+      <a href="../vpc-networking-and-load-balancing/"><strong>Topic</strong>VPC Networking &amp; Load Balancing</a>
+      <a href="../resource-hierarchy-projects-and-apis/"><strong>Topic</strong>Resource Hierarchy, Projects &amp; APIs</a>
+      <a href="../cloud-storage-classes-access-and-security/"><strong>Topic</strong>Cloud Storage: Classes, Access &amp; Security</a>
+      <a href="../serverless-compute-cloud-run-and-app-engine/"><strong>Topic</strong>Serverless Compute: Cloud Run &amp; App Engine</a>
+      <a href="../data-protection-encryption-and-secret-manager/"><strong>Topic</strong>Data Protection: Encryption &amp; Secret Manager</a>
+      <a href="../infrastructure-as-code-and-cloud-shell/"><strong>Topic</strong>Infrastructure as Code &amp; Cloud Shell</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="../../analytics-config.js"></script>
+<script defer src="../../analytics.js"></script>
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
+</body>
+</html>

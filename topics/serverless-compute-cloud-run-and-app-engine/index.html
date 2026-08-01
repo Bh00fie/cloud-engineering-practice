@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Serverless Compute: Cloud Run &amp; App Engine — GCP ACE Exam Guide</title>
+<meta name="description" content="Cloud Run and App Engine on the GCP ACE exam: deploying, traffic splitting, and each project&#39;s one-app-per-project rule — plus free sample questions with explanations.">
+<link rel="canonical" href="https://cloudaceprep.com/topics/serverless-compute-cloud-run-and-app-engine/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Serverless Compute: Cloud Run &amp; App Engine — GCP ACE Exam Guide">
+<meta property="og:description" content="Cloud Run and App Engine on the GCP ACE exam: deploying, traffic splitting, and each project&#39;s one-app-per-project rule — plus free sample questions with explanations.">
+<meta property="og:url" content="https://cloudaceprep.com/topics/serverless-compute-cloud-run-and-app-engine/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Serverless Compute: Cloud Run &amp; App Engine — GCP ACE Exam Guide">
+<meta name="twitter:description" content="Cloud Run and App Engine on the GCP ACE exam: deploying, traffic splitting, and each project&#39;s one-app-per-project rule — plus free sample questions with explanations.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Topics","item":"https://cloudaceprep.com/topics/"},{"@type":"ListItem","position":4,"name":"Serverless Compute: Cloud Run & App Engine","item":"https://cloudaceprep.com/topics/serverless-compute-cloud-run-and-app-engine/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE: Serverless Compute: Cloud Run & App Engine — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Serverless Compute: Cloud Run & App Engine"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"App Engine allows how many applications per project?","acceptedAnswer":{"@type":"Answer","text":"One app per project (with multiple services and versions inside it) — Each project hosts exactly one App Engine app, in one region chosen at creation (immutable); the app subdivides into services, each with versions. Needing 'another app' typically means another service — or another project."}},{"@type":"Question","name":"You must deploy your container image to Cloud Run with public (unauthenticated) access, in one command. Which one?","acceptedAnswer":{"@type":"Answer","text":"gcloud run deploy api --image=REGION-docker.pkg.dev/proj/repo/api:v1 --allow-unauthenticated --region=us-central1 — gcloud run deploy creates/updates the service and --allow-unauthenticated grants run.invoker to allUsers. App Engine and functions are different products; Cloud Run's kubectl-style YAML exists but isn't deployed via kubectl."}},{"@type":"Question","name":"Your finance team asks you to explain the Cloud Run line items on last month's bill. Cloud Run bills you for:","acceptedAnswer":{"@type":"Answer","text":"CPU/memory during request processing (plus per-request fee), or continuously if min-instances/always-on CPU is set — Default billing is usage-based per 100ms of allocated resources while serving; idle costs appear only with min-instances or instance-based billing. Image storage bills separately in Artifact Registry."}},{"@type":"Question","name":"Your repo has an app.yaml ready and you must deploy the App Engine app from source. Which command?","acceptedAnswer":{"@type":"Answer","text":"gcloud app deploy — gcloud app deploy reads app.yaml and deploys a new version (optionally --no-promote to keep traffic on the old version). appcfg is long dead; the others don't exist."}},{"@type":"Question","name":"The revision you just deployed to your Cloud Run service is misbehaving in production. What is the fastest safe rollback?","acceptedAnswer":{"@type":"Answer","text":"Route 100% traffic back to the previous revision (gcloud run services update-traffic api --to-revisions=PREV=100) — Cloud Run keeps prior revisions; traffic management flips back instantly with no rebuild. Deleting the service breaks the URL; containers are immutable and ephemeral — live edits aren't a thing."}},{"@type":"Question","name":"Your App Engine app starts serving errors right after you deployed a new version. What is the immediate mitigation with zero redeploy?","acceptedAnswer":{"@type":"Answer","text":"Shift traffic back to the previous healthy version (set-traffic / 'migrate traffic') — Versions are kept; traffic can be re-pointed instantly. Deleting the app is catastrophic, the region is immutable, and scaling to zero is an outage."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / <a href="../../topics/">Topics</a> / Serverless Compute: Cloud Run &amp; App Engine</p>
+  <h1>Serverless Compute: Cloud Run &amp; App Engine</h1>
+  <p class="lede">What actually gets tested on the Google Cloud Associate Cloud Engineer exam,
+  the traps to know, and 6 free sample questions with full explanations.</p>
+
+  <p>Each project hosts <strong>exactly one App Engine app</strong>, in one region chosen at creation that can never be changed afterward — needing "another" App Engine app for something is a signal that a scenario actually needs a second project, not a second app inside the same one. Inside that single app, work is organized into services, each with versions, which is how App Engine supports multiple components without multiple apps.</p>
+  <p><code>gcloud run deploy</code> creates or updates a Cloud Run service, and <code>--allow-unauthenticated</code> grants <code>run.invoker</code> to <code>allUsers</code> — a flag the exam likes to test because it's the exact mechanism by which a service becomes publicly reachable versus staying IAM-gated. Cloud Run and App Engine are genuinely different products (not two names for the same thing), and neither is the same as Cloud Functions, even though all three get grouped under "serverless."</p>
+  <p>Cloud Run's <strong>revision model</strong> is worth knowing in operational depth: prior revisions are kept, so traffic management can flip back to an older one instantly with no rebuild required, and traffic can be split by percentage across revisions natively — with tags for direct per-revision URLs, that's canary and blue/green deployment without any extra infrastructure. Deleting the service itself breaks its URL permanently; containers are immutable and ephemeral by design, which is why configuration belongs in environment variables or Secret Manager, not baked into the image.</p>
+
+  <div class="card">
+    <h3>Exam tips for this topic</h3>
+    <ul>
+      <li>Each project has exactly one App Engine app in one immutable region — needing &quot;another app&quot; almost always means the scenario needs a second project.</li>
+      <li>--allow-unauthenticated on gcloud run deploy grants run.invoker to allUsers — recognize it as the exact flag that makes a Cloud Run service publicly reachable.</li>
+      <li>Cloud Run keeps prior revisions and splits traffic by percentage natively — instant rollback and canary deployment need no extra infrastructure beyond that.</li>
+    </ul>
+  </div>
+
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
+  <h2>Sample questions — Serverless Compute: Cloud Run &amp; App Engine</h2>
+  <p>These 6 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">App Engine</span>
+    <p class="qtext">App Engine allows how many applications per project?</p>
+    <ul class="opts">
+      <li class="correct">One app per project (with multiple services and versions inside it)<span class="tag">Correct</span></li>
+      <li>Unlimited apps per project, with one created automatically per deployed service</li>
+      <li>One app per zone that the project has resources in</li>
+      <li>Ten apps per billing account, pooled across projects</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Each project hosts exactly one App Engine app, in one region chosen at creation (immutable); the app subdivides into services, each with versions. Needing &#39;another app&#39; typically means another service — or another project.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud Run</span>
+    <p class="qtext">You must deploy your container image to Cloud Run with public (unauthenticated) access, in one command. Which one?</p>
+    <ul class="opts">
+      <li class="correct">gcloud run deploy api --image=REGION-docker.pkg.dev/proj/repo/api:v1 --allow-unauthenticated --region=us-central1<span class="tag">Correct</span></li>
+      <li>gcloud app deploy --image</li>
+      <li>kubectl apply cloudrun.yaml --public</li>
+      <li>gcloud functions deploy api --container</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> gcloud run deploy creates/updates the service and --allow-unauthenticated grants run.invoker to allUsers. App Engine and functions are different products; Cloud Run&#39;s kubectl-style YAML exists but isn&#39;t deployed via kubectl.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Serverless ops</span>
+    <p class="qtext">Your finance team asks you to explain the Cloud Run line items on last month&#39;s bill. Cloud Run bills you for:</p>
+    <ul class="opts">
+      <li class="correct">CPU/memory during request processing (plus per-request fee), or continuously if min-instances/always-on CPU is set<span class="tag">Correct</span></li>
+      <li>A flat monthly fee per service</li>
+      <li>Number of container images stored</li>
+      <li>Lines of code</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Default billing is usage-based per 100ms of allocated resources while serving; idle costs appear only with min-instances or instance-based billing. Image storage bills separately in Artifact Registry.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">App Engine</span>
+    <p class="qtext">Your repo has an app.yaml ready and you must deploy the App Engine app from source. Which command?</p>
+    <ul class="opts">
+      <li class="correct">gcloud app deploy<span class="tag">Correct</span></li>
+      <li>gcloud app push</li>
+      <li>gcloud deploy app.yaml</li>
+      <li>appcfg upload</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> gcloud app deploy reads app.yaml and deploys a new version (optionally --no-promote to keep traffic on the old version). appcfg is long dead; the others don&#39;t exist.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud Run</span>
+    <p class="qtext">The revision you just deployed to your Cloud Run service is misbehaving in production. What is the fastest safe rollback?</p>
+    <ul class="opts">
+      <li class="correct">Route 100% traffic back to the previous revision (gcloud run services update-traffic api --to-revisions=PREV=100)<span class="tag">Correct</span></li>
+      <li>Delete the whole service and redeploy last week&#39;s code</li>
+      <li>Restart the container</li>
+      <li>Edit code live in the container</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud Run keeps prior revisions; traffic management flips back instantly with no rebuild. Deleting the service breaks the URL; containers are immutable and ephemeral — live edits aren&#39;t a thing.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Serverless ops</span>
+    <p class="qtext">Your App Engine app starts serving errors right after you deployed a new version. What is the immediate mitigation with zero redeploy?</p>
+    <ul class="opts">
+      <li class="correct">Shift traffic back to the previous healthy version (set-traffic / &#39;migrate traffic&#39;)<span class="tag">Correct</span></li>
+      <li>Delete the app</li>
+      <li>Change the region</li>
+      <li>Scale to zero</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Versions are kept; traffic can be re-pointed instantly. Deleting the app is catastrophic, the region is immutable, and scaling to zero is an outage.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this for real</h3>
+    <p>The app has dozens more questions on this and every other topic, with instant scoring,
+    spaced repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=3#view-home">Start practicing →</a>
+  </div>
+
+  <h2>This topic shows up in</h2>
+  <div class="domain-grid">
+    <a href="../../domains/planning-and-configuring-a-cloud-solution/"><strong>Domain 2</strong>Planning &amp; Configuring a Cloud Solution</a>
+      <a href="../../domains/deploying-and-implementing-a-cloud-solution/"><strong>Domain 3</strong>Deploying &amp; Implementing a Cloud Solution</a>
+      <a href="../../domains/ensuring-successful-operation/"><strong>Domain 4</strong>Ensuring Successful Operation</a>
+  </div>
+
+  <h2>Other topics</h2>
+  <div class="domain-grid">
+    <a href="../iam-roles-and-permissions/"><strong>Topic</strong>IAM Roles &amp; Permissions</a>
+      <a href="../service-accounts-and-identity/"><strong>Topic</strong>Service Accounts &amp; Identity</a>
+      <a href="../billing-pricing-and-cost-management/"><strong>Topic</strong>Billing, Pricing &amp; Cost Management</a>
+      <a href="../google-kubernetes-engine-gke/"><strong>Topic</strong>Google Kubernetes Engine (GKE)</a>
+      <a href="../gcloud-cli-commands/"><strong>Topic</strong>gcloud CLI Commands</a>
+      <a href="../choosing-the-right-compute-option/"><strong>Topic</strong>Choosing the Right Compute Option</a>
+      <a href="../compute-engine-deployment-and-operations/"><strong>Topic</strong>Compute Engine Deployment &amp; Operations</a>
+      <a href="../cloud-monitoring-logging-and-audit-logs/"><strong>Topic</strong>Cloud Monitoring, Logging &amp; Audit Logs</a>
+      <a href="../vpc-networking-and-load-balancing/"><strong>Topic</strong>VPC Networking &amp; Load Balancing</a>
+      <a href="../choosing-a-database/"><strong>Topic</strong>Choosing a Database on Google Cloud</a>
+      <a href="../resource-hierarchy-projects-and-apis/"><strong>Topic</strong>Resource Hierarchy, Projects &amp; APIs</a>
+      <a href="../cloud-storage-classes-access-and-security/"><strong>Topic</strong>Cloud Storage: Classes, Access &amp; Security</a>
+      <a href="../data-protection-encryption-and-secret-manager/"><strong>Topic</strong>Data Protection: Encryption &amp; Secret Manager</a>
+      <a href="../infrastructure-as-code-and-cloud-shell/"><strong>Topic</strong>Infrastructure as Code &amp; Cloud Shell</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="../../analytics-config.js"></script>
+<script defer src="../../analytics.js"></script>
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
+</body>
+</html>

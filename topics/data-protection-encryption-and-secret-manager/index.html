@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Protection: Encryption &amp; Secret Manager — GCP ACE Exam Guide</title>
+<meta name="description" content="Encryption and Secret Manager on the GCP ACE exam: default encryption vs CMEK vs CSEK, and why secrets don&#39;t belong in code — plus free sample questions.">
+<link rel="canonical" href="https://cloudaceprep.com/topics/data-protection-encryption-and-secret-manager/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Data Protection: Encryption &amp; Secret Manager — GCP ACE Exam Guide">
+<meta property="og:description" content="Encryption and Secret Manager on the GCP ACE exam: default encryption vs CMEK vs CSEK, and why secrets don&#39;t belong in code — plus free sample questions.">
+<meta property="og:url" content="https://cloudaceprep.com/topics/data-protection-encryption-and-secret-manager/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Data Protection: Encryption &amp; Secret Manager — GCP ACE Exam Guide">
+<meta name="twitter:description" content="Encryption and Secret Manager on the GCP ACE exam: default encryption vs CMEK vs CSEK, and why secrets don&#39;t belong in code — plus free sample questions.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Topics","item":"https://cloudaceprep.com/topics/"},{"@type":"ListItem","position":4,"name":"Data Protection: Encryption & Secret Manager","item":"https://cloudaceprep.com/topics/data-protection-encryption-and-secret-manager/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE: Data Protection: Encryption & Secret Manager — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Data Protection: Encryption & Secret Manager"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"A customer asks whether the data your app stores on Google Cloud is encrypted, given that you never configured any encryption. Data at rest in Google Cloud is encrypted:","acceptedAnswer":{"@type":"Answer","text":"Always, by default, with Google-managed keys — CMEK/CSEK are optional layers for customer control — Default encryption at rest is universal and free. CMEK gives you key control/rotation/revocation; CSEK (customer-supplied) means Google never stores your key. The exam loves 'default encryption' facts."}},{"@type":"Question","name":"Your app on Cloud Run needs a third-party API key at runtime. Recommended handling?","acceptedAnswer":{"@type":"Answer","text":"Store it in Secret Manager and mount/expose it to the service (--set-secrets), granting the service account secretAccessor — Secret Manager provides versioned, IAM-controlled, audited secret storage with native Cloud Run/GKE integration. Images, repos, and URLs all leak secrets to anyone with read access."}},{"@type":"Question","name":"Your compliance team asks you to compare the CMEK and CSEK encryption key options for a sensitive new workload. What is the difference?","acceptedAnswer":{"@type":"Answer","text":"CMEK: keys live in Cloud KMS under your control; CSEK: you supply the raw key with each request and Google doesn't store it — CMEK = managed control (rotation, IAM on keys, audit); CSEK = maximal customer possession with operational burden (lose the key, lose the data). Default remains Google-managed keys."}},{"@type":"Question","name":"A code review reveals that your team's Cloud Run service reads its database password from a plaintext environment variable defined in the deploy script, which is committed to the repository. You must fix this following Google-recommended practices, with an audit trail of secret access. What should you do?","acceptedAnswer":{"@type":"Answer","text":"Move the password to Secret Manager, expose it to the service with --set-secrets, grant the service's SA roles/secretmanager.secretAccessor, rotate the password, and purge it from the repo history — Secret Manager gives IAM-controlled, versioned, audit-logged secrets with native Cloud Run binding — and because the old password is burned into git history, rotation plus history purge is mandatory. Base64 is encoding, not encryption; private repos still leak to everyone with read access; renaming variables is security theater."}},{"@type":"Question","name":"A customer security questionnaire asks whether your traffic between Google Cloud services is encrypted in transit. The accurate answer is:","acceptedAnswer":{"@type":"Answer","text":"Google encrypts/authenticates traffic between its facilities automatically; you add TLS at your app edges (LB certs, client TLS) as needed — Google-internal links are protected by default (ALTS etc.); your responsibility is the app layer — HTTPS at the LB, TLS to databases, etc."}},{"@type":"Question","name":"You are reviewing a pull request that hardcodes the database password for your Cloud Run app in its deploy config. Where should that password live instead?","acceptedAnswer":{"@type":"Answer","text":"Secret Manager, accessed at runtime by the service's SA with secretmanager.secretAccessor — Secret Manager provides versioning, IAM, audit logging, and rotation hooks; runtime binding (--set-secrets) avoids exposing values in configs. Git history never forgets committed secrets."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / <a href="../../topics/">Topics</a> / Data Protection: Encryption &amp; Secret Manager</p>
+  <h1>Data Protection: Encryption &amp; Secret Manager</h1>
+  <p class="lede">What actually gets tested on the Google Cloud Associate Cloud Engineer exam,
+  the traps to know, and 6 free sample questions with full explanations.</p>
+
+  <p>Google Cloud encrypts data at rest <strong>by default, universally, at no extra cost</strong> — a fact the exam expects you to know so you don't overcomplicate a scenario that doesn't actually need customer-managed keys. When a scenario does need more control, <strong>CMEK</strong> (customer-managed encryption keys, via Cloud KMS) gives you rotation, revocation, and IAM control over the key itself while Google still stores and uses it; <strong>CSEK</strong> (customer-supplied encryption keys) goes further — Google never stores your key at all, which means maximal control but also maximal operational burden: lose the key, and the data is unrecoverable.</p>
+  <p><strong>Secret Manager</strong> exists because secrets — API keys, database passwords, tokens — don't belong in container images, config files, or a Git repository: images and repos both leak secrets to anyone with read access, and Git history keeps old commits around even after a secret is "removed" from the latest one. Secret Manager instead provides versioned, IAM-controlled, audit-logged secret storage with native integration into Cloud Run and GKE, so a workload can bind a secret at runtime (e.g. via <code>--set-secrets</code> on Cloud Run) without the value ever appearing in a config file or the image itself.</p>
+  <p>Put together, this topic is really about recognizing when the <strong>default</strong> is already sufficient (most scenarios) versus when a specific requirement — regulatory, contractual, "we must control our own keys" — pushes you toward CMEK or, rarely, the heavier CSEK. The exam rewards not over-engineering a security answer just as much as it rewards catching a genuine gap.</p>
+
+  <div class="card">
+    <h3>Exam tips for this topic</h3>
+    <ul>
+      <li>Default encryption at rest is universal and free — don&#39;t reach for CMEK or CSEK unless the scenario specifically calls for customer control over the keys.</li>
+      <li>CMEK = you control rotation/revocation/IAM on the key, Google still stores it; CSEK = you supply and hold the key entirely, so losing it means losing the data.</li>
+      <li>Secrets belong in Secret Manager, bound at runtime — never in a container image, a config file, or committed to a Git repository, even one that&#39;s since had the secret &quot;removed.&quot;</li>
+    </ul>
+  </div>
+
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
+  <h2>Sample questions — Data Protection: Encryption &amp; Secret Manager</h2>
+  <p>These 6 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">Encryption</span>
+    <p class="qtext">A customer asks whether the data your app stores on Google Cloud is encrypted, given that you never configured any encryption. Data at rest in Google Cloud is encrypted:</p>
+    <ul class="opts">
+      <li class="correct">Always, by default, with Google-managed keys — CMEK/CSEK are optional layers for customer control<span class="tag">Correct</span></li>
+      <li>Only if you enable encryption when creating each resource</li>
+      <li>Only for customers on Enhanced or Premium support tiers</li>
+      <li>Never unless you upload encrypted files</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Default encryption at rest is universal and free. CMEK gives you key control/rotation/revocation; CSEK (customer-supplied) means Google never stores your key. The exam loves &#39;default encryption&#39; facts.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Secret Manager</span>
+    <p class="qtext">Your app on Cloud Run needs a third-party API key at runtime. Recommended handling?</p>
+    <ul class="opts">
+      <li class="correct">Store it in Secret Manager and mount/expose it to the service (--set-secrets), granting the service account secretAccessor<span class="tag">Correct</span></li>
+      <li>Bake it into the container image</li>
+      <li>Commit it to git &#39;privately&#39;</li>
+      <li>Pass it in the public URL</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Secret Manager provides versioned, IAM-controlled, audited secret storage with native Cloud Run/GKE integration. Images, repos, and URLs all leak secrets to anyone with read access.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Encryption</span>
+    <p class="qtext">Your compliance team asks you to compare the CMEK and CSEK encryption key options for a sensitive new workload. What is the difference?</p>
+    <ul class="opts">
+      <li class="correct">CMEK: keys live in Cloud KMS under your control; CSEK: you supply the raw key with each request and Google doesn&#39;t store it<span class="tag">Correct</span></li>
+      <li>Both store keys in Cloud KMS; CSEK simply adds a second layer</li>
+      <li>CSEK is the default for buckets; CMEK must be enabled per object</li>
+      <li>CMEK disables encryption</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> CMEK = managed control (rotation, IAM on keys, audit); CSEK = maximal customer possession with operational burden (lose the key, lose the data). Default remains Google-managed keys.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Secret Manager</span>
+    <p class="qtext">A code review reveals that your team&#39;s Cloud Run service reads its database password from a plaintext environment variable defined in the deploy script, which is committed to the repository. You must fix this following Google-recommended practices, with an audit trail of secret access. What should you do?</p>
+    <ul class="opts">
+      <li class="correct">Move the password to Secret Manager, expose it to the service with --set-secrets, grant the service&#39;s SA roles/secretmanager.secretAccessor, rotate the password, and purge it from the repo history<span class="tag">Correct</span></li>
+      <li>Base64-encode the password in the script so it isn&#39;t plaintext</li>
+      <li>Move the password to a different, private repository</li>
+      <li>Rename the environment variable to something less obvious</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Secret Manager gives IAM-controlled, versioned, audit-logged secrets with native Cloud Run binding — and because the old password is burned into git history, rotation plus history purge is mandatory. Base64 is encoding, not encryption; private repos still leak to everyone with read access; renaming variables is security theater.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Encryption</span>
+    <p class="qtext">A customer security questionnaire asks whether your traffic between Google Cloud services is encrypted in transit. The accurate answer is:</p>
+    <ul class="opts">
+      <li class="correct">Google encrypts/authenticates traffic between its facilities automatically; you add TLS at your app edges (LB certs, client TLS) as needed<span class="tag">Correct</span></li>
+      <li>Exists only between regions, not within a single zone</li>
+      <li>Requires you to configure IPsec tunnels between each pair of services</li>
+      <li>Only applies to storage</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Google-internal links are protected by default (ALTS etc.); your responsibility is the app layer — HTTPS at the LB, TLS to databases, etc.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Secret Manager</span>
+    <p class="qtext">You are reviewing a pull request that hardcodes the database password for your Cloud Run app in its deploy config. Where should that password live instead?</p>
+    <ul class="opts">
+      <li class="correct">Secret Manager, accessed at runtime by the service&#39;s SA with secretmanager.secretAccessor<span class="tag">Correct</span></li>
+      <li>An environment variable committed in the deploy YAML in git</li>
+      <li>A comment in the code</li>
+      <li>A public bucket with an obscure name</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Secret Manager provides versioning, IAM, audit logging, and rotation hooks; runtime binding (--set-secrets) avoids exposing values in configs. Git history never forgets committed secrets.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this for real</h3>
+    <p>The app has dozens more questions on this and every other topic, with instant scoring,
+    spaced repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=5#view-home">Start practicing →</a>
+  </div>
+
+  <h2>This topic shows up in</h2>
+  <div class="domain-grid">
+    <a href="../../domains/deploying-and-implementing-a-cloud-solution/"><strong>Domain 3</strong>Deploying &amp; Implementing a Cloud Solution</a>
+      <a href="../../domains/configuring-access-and-security/"><strong>Domain 5</strong>Configuring Access and Security</a>
+  </div>
+
+  <h2>Other topics</h2>
+  <div class="domain-grid">
+    <a href="../iam-roles-and-permissions/"><strong>Topic</strong>IAM Roles &amp; Permissions</a>
+      <a href="../service-accounts-and-identity/"><strong>Topic</strong>Service Accounts &amp; Identity</a>
+      <a href="../billing-pricing-and-cost-management/"><strong>Topic</strong>Billing, Pricing &amp; Cost Management</a>
+      <a href="../google-kubernetes-engine-gke/"><strong>Topic</strong>Google Kubernetes Engine (GKE)</a>
+      <a href="../gcloud-cli-commands/"><strong>Topic</strong>gcloud CLI Commands</a>
+      <a href="../choosing-the-right-compute-option/"><strong>Topic</strong>Choosing the Right Compute Option</a>
+      <a href="../compute-engine-deployment-and-operations/"><strong>Topic</strong>Compute Engine Deployment &amp; Operations</a>
+      <a href="../cloud-monitoring-logging-and-audit-logs/"><strong>Topic</strong>Cloud Monitoring, Logging &amp; Audit Logs</a>
+      <a href="../vpc-networking-and-load-balancing/"><strong>Topic</strong>VPC Networking &amp; Load Balancing</a>
+      <a href="../choosing-a-database/"><strong>Topic</strong>Choosing a Database on Google Cloud</a>
+      <a href="../resource-hierarchy-projects-and-apis/"><strong>Topic</strong>Resource Hierarchy, Projects &amp; APIs</a>
+      <a href="../cloud-storage-classes-access-and-security/"><strong>Topic</strong>Cloud Storage: Classes, Access &amp; Security</a>
+      <a href="../serverless-compute-cloud-run-and-app-engine/"><strong>Topic</strong>Serverless Compute: Cloud Run &amp; App Engine</a>
+      <a href="../infrastructure-as-code-and-cloud-shell/"><strong>Topic</strong>Infrastructure as Code &amp; Cloud Shell</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="../../analytics-config.js"></script>
+<script defer src="../../analytics.js"></script>
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
+</body>
+</html>

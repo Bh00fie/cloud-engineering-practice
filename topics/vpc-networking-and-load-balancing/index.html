@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VPC Networking &amp; Load Balancing — GCP ACE Exam Guide</title>
+<meta name="description" content="VPC networking and load balancer types for the GCP ACE exam: firewall rule defaults, VPC peering pitfalls, and picking the right LB — plus free sample questions.">
+<link rel="canonical" href="https://cloudaceprep.com/topics/vpc-networking-and-load-balancing/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VPC Networking &amp; Load Balancing — GCP ACE Exam Guide">
+<meta property="og:description" content="VPC networking and load balancer types for the GCP ACE exam: firewall rule defaults, VPC peering pitfalls, and picking the right LB — plus free sample questions.">
+<meta property="og:url" content="https://cloudaceprep.com/topics/vpc-networking-and-load-balancing/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="VPC Networking &amp; Load Balancing — GCP ACE Exam Guide">
+<meta name="twitter:description" content="VPC networking and load balancer types for the GCP ACE exam: firewall rule defaults, VPC peering pitfalls, and picking the right LB — plus free sample questions.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Topics","item":"https://cloudaceprep.com/topics/"},{"@type":"ListItem","position":4,"name":"VPC Networking & Load Balancing","item":"https://cloudaceprep.com/topics/vpc-networking-and-load-balancing/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE: VPC Networking & Load Balancing — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — VPC Networking & Load Balancing"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"A public website needs a single global anycast IP, HTTPS termination, and routing users to the nearest healthy backend region. Which load balancer?","acceptedAnswer":{"@type":"Answer","text":"Global external Application Load Balancer — The global external ALB is Layer 7: one anycast IP worldwide, TLS termination, URL routing, CDN integration, cross-region failover. Network LBs are regional/L4, internal LBs aren't for public traffic, and VPN is connectivity, not load balancing."}},{"@type":"Question","name":"You plan subnets for three regions and future VPC peering with a partner using 10.1.0.0/16. What must you avoid?","acceptedAnswer":{"@type":"Answer","text":"Overlapping CIDR ranges with the partner's 10.1.0.0/16 — peering needs non-overlapping ranges — VPC peering (and most hybrid connectivity) fails or blackholes with overlapping IP ranges, so plan around the partner's space. RFC 1918 is expected, multiple subnets per region are fine, and /20 is a normal size."}},{"@type":"Question","name":"You must load-balance non-HTTP TCP traffic (a custom protocol on port 5000) to VMs in one region, preserving client source IPs. Which choice?","acceptedAnswer":{"@type":"Answer","text":"External passthrough Network Load Balancer — Passthrough Network LB is Layer 4, handles arbitrary TCP/UDP, and passes packets through with the original source IP. The ALB is HTTP(S)-only; CDN caches HTTP content; a serverless NEG is a backend type, not a load balancer."}},{"@type":"Question","name":"Which firewall rule model does a Google Cloud VPC use?","acceptedAnswer":{"@type":"Answer","text":"Stateful allow/deny rules with priorities, applied VPC-wide, targeting tags or service accounts — VPC firewall rules are stateful, prioritized (0–65535), and target instances by tags or service accounts; the implied baseline is deny-all ingress, allow-all egress. Subnets don't carry ACLs, and OS firewalls are extra, not the mechanism."}},{"@type":"Question","name":"Traffic between your internal microservice tiers (HTTP, private IPs only) should be load-balanced. Which product?","acceptedAnswer":{"@type":"Answer","text":"Internal Application Load Balancer — The internal ALB provides L7 load balancing on private RFC 1918 addresses inside your VPC. External LBs expose public endpoints, and Cloud NAT is outbound-only address translation, not inbound balancing."}},{"@type":"Question","name":"Google Cloud DNS is best described as:","acceptedAnswer":{"@type":"Answer","text":"A scalable, managed authoritative DNS service supporting both public and private zones — Cloud DNS hosts public zones (internet-facing) and private zones (visible to chosen VPCs) with a 100% availability SLA. Domain registration is a separate (partner) function, and it doesn't cache/serve content like a CDN."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / <a href="../../topics/">Topics</a> / VPC Networking &amp; Load Balancing</p>
+  <h1>VPC Networking &amp; Load Balancing</h1>
+  <p class="lede">What actually gets tested on the Google Cloud Associate Cloud Engineer exam,
+  the traps to know, and 6 free sample questions with full explanations.</p>
+
+  <p>VPC firewall rules <strong>default-deny ingress and default-allow egress</strong>; a missing ingress rule, not a broken application, is the exam's most common explanation for why a connection "fails" in a scenario question. Rules are evaluated by priority, matched on source ranges and target tags, and — like IAM — this is a topic where knowing the default behavior matters more than memorizing every parameter.</p>
+  <p><strong>VPC Peering</strong> (and most hybrid-connectivity setups) breaks or blackholes traffic when the two sides have overlapping IP ranges, so planning non-overlapping RFC 1918 space up front is the correct move whenever a question mentions connecting VPCs or an on-prem network. <strong>Cloud NAT</strong> is outbound-only — it lets private instances reach the internet without a public IP, but it does not accept inbound connections, which is a frequent wrong-answer trap when a question actually needs inbound access.</p>
+  <p>On load balancers, match the layer to the need: the <strong>global external Application Load Balancer</strong> is Layer 7 — one anycast IP worldwide, TLS termination, URL routing, CDN integration, cross-region failover. A <strong>passthrough Network Load Balancer</strong> is Layer 4, regional, handles arbitrary TCP/UDP, and preserves the original source IP, unlike the HTTP(S)-only ALB. An <strong>internal Application Load Balancer</strong> gives you the same L7 routing but scoped to private RFC 1918 addresses inside your VPC — the answer whenever a scenario needs HTTP routing that should never be reachable from the public internet.</p>
+
+  <div class="card">
+    <h3>Exam tips for this topic</h3>
+    <ul>
+      <li>VPC firewalls default-deny ingress and default-allow egress — a missing ingress rule is the most common reason a scenario says a connection &quot;fails.&quot;</li>
+      <li>VPC Peering fails or blackholes with overlapping IP ranges; plan non-overlapping RFC 1918 space before connecting VPCs or hybrid networks.</li>
+      <li>Cloud NAT is outbound-only — it never accepts inbound connections, which trips up questions that actually need something reachable from outside.</li>
+    </ul>
+  </div>
+
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
+  <h2>Sample questions — VPC Networking &amp; Load Balancing</h2>
+  <p>These 6 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">Load balancing</span>
+    <p class="qtext">A public website needs a single global anycast IP, HTTPS termination, and routing users to the nearest healthy backend region. Which load balancer?</p>
+    <ul class="opts">
+      <li class="correct">Global external Application Load Balancer<span class="tag">Correct</span></li>
+      <li>Regional external passthrough Network Load Balancer</li>
+      <li>Internal Application Load Balancer</li>
+      <li>Cloud VPN</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> The global external ALB is Layer 7: one anycast IP worldwide, TLS termination, URL routing, CDN integration, cross-region failover. Network LBs are regional/L4, internal LBs aren&#39;t for public traffic, and VPN is connectivity, not load balancing.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Networking</span>
+    <p class="qtext">You plan subnets for three regions and future VPC peering with a partner using 10.1.0.0/16. What must you avoid?</p>
+    <ul class="opts">
+      <li class="correct">Overlapping CIDR ranges with the partner&#39;s 10.1.0.0/16 — peering needs non-overlapping ranges<span class="tag">Correct</span></li>
+      <li>Using RFC 1918 private address space anywhere, since peered networks must use public ranges</li>
+      <li>Having more than one subnet per region in the same VPC network</li>
+      <li>Using /20 subnets, which are considered too large for peered networks</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> VPC peering (and most hybrid connectivity) fails or blackholes with overlapping IP ranges, so plan around the partner&#39;s space. RFC 1918 is expected, multiple subnets per region are fine, and /20 is a normal size.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Load balancing</span>
+    <p class="qtext">You must load-balance non-HTTP TCP traffic (a custom protocol on port 5000) to VMs in one region, preserving client source IPs. Which choice?</p>
+    <ul class="opts">
+      <li class="correct">External passthrough Network Load Balancer<span class="tag">Correct</span></li>
+      <li>Global external Application Load Balancer</li>
+      <li>Cloud CDN</li>
+      <li>Serverless NEG</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Passthrough Network LB is Layer 4, handles arbitrary TCP/UDP, and passes packets through with the original source IP. The ALB is HTTP(S)-only; CDN caches HTTP content; a serverless NEG is a backend type, not a load balancer.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Networking</span>
+    <p class="qtext">Which firewall rule model does a Google Cloud VPC use?</p>
+    <ul class="opts">
+      <li class="correct">Stateful allow/deny rules with priorities, applied VPC-wide, targeting tags or service accounts<span class="tag">Correct</span></li>
+      <li>Stateless access control lists that are applied individually to each subnet in the network</li>
+      <li>Per-VM iptables rules that you must configure yourself inside the guest operating system</li>
+      <li>Deny-all egress by default, with allow-all ingress unless a rule explicitly blocks it</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> VPC firewall rules are stateful, prioritized (0–65535), and target instances by tags or service accounts; the implied baseline is deny-all ingress, allow-all egress. Subnets don&#39;t carry ACLs, and OS firewalls are extra, not the mechanism.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Load balancing</span>
+    <p class="qtext">Traffic between your internal microservice tiers (HTTP, private IPs only) should be load-balanced. Which product?</p>
+    <ul class="opts">
+      <li class="correct">Internal Application Load Balancer<span class="tag">Correct</span></li>
+      <li>Global external Application Load Balancer</li>
+      <li>Cloud NAT</li>
+      <li>External passthrough Network Load Balancer</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> The internal ALB provides L7 load balancing on private RFC 1918 addresses inside your VPC. External LBs expose public endpoints, and Cloud NAT is outbound-only address translation, not inbound balancing.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Networking</span>
+    <p class="qtext">Google Cloud DNS is best described as:</p>
+    <ul class="opts">
+      <li class="correct">A scalable, managed authoritative DNS service supporting both public and private zones<span class="tag">Correct</span></li>
+      <li>A local DNS resolver that runs as a background agent on each individual VM</li>
+      <li>Purely a domain registrar for buying and renewing domain names, nothing more</li>
+      <li>A content delivery network that happens to also cache DNS record lookups</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud DNS hosts public zones (internet-facing) and private zones (visible to chosen VPCs) with a 100% availability SLA. Domain registration is a separate (partner) function, and it doesn&#39;t cache/serve content like a CDN.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this for real</h3>
+    <p>The app has dozens more questions on this and every other topic, with instant scoring,
+    spaced repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=3#view-home">Start practicing →</a>
+  </div>
+
+  <h2>This topic shows up in</h2>
+  <div class="domain-grid">
+    <a href="../../domains/planning-and-configuring-a-cloud-solution/"><strong>Domain 2</strong>Planning &amp; Configuring a Cloud Solution</a>
+      <a href="../../domains/deploying-and-implementing-a-cloud-solution/"><strong>Domain 3</strong>Deploying &amp; Implementing a Cloud Solution</a>
+  </div>
+
+  <h2>Other topics</h2>
+  <div class="domain-grid">
+    <a href="../iam-roles-and-permissions/"><strong>Topic</strong>IAM Roles &amp; Permissions</a>
+      <a href="../service-accounts-and-identity/"><strong>Topic</strong>Service Accounts &amp; Identity</a>
+      <a href="../billing-pricing-and-cost-management/"><strong>Topic</strong>Billing, Pricing &amp; Cost Management</a>
+      <a href="../google-kubernetes-engine-gke/"><strong>Topic</strong>Google Kubernetes Engine (GKE)</a>
+      <a href="../gcloud-cli-commands/"><strong>Topic</strong>gcloud CLI Commands</a>
+      <a href="../choosing-the-right-compute-option/"><strong>Topic</strong>Choosing the Right Compute Option</a>
+      <a href="../compute-engine-deployment-and-operations/"><strong>Topic</strong>Compute Engine Deployment &amp; Operations</a>
+      <a href="../cloud-monitoring-logging-and-audit-logs/"><strong>Topic</strong>Cloud Monitoring, Logging &amp; Audit Logs</a>
+      <a href="../choosing-a-database/"><strong>Topic</strong>Choosing a Database on Google Cloud</a>
+      <a href="../resource-hierarchy-projects-and-apis/"><strong>Topic</strong>Resource Hierarchy, Projects &amp; APIs</a>
+      <a href="../cloud-storage-classes-access-and-security/"><strong>Topic</strong>Cloud Storage: Classes, Access &amp; Security</a>
+      <a href="../serverless-compute-cloud-run-and-app-engine/"><strong>Topic</strong>Serverless Compute: Cloud Run &amp; App Engine</a>
+      <a href="../data-protection-encryption-and-secret-manager/"><strong>Topic</strong>Data Protection: Encryption &amp; Secret Manager</a>
+      <a href="../infrastructure-as-code-and-cloud-shell/"><strong>Topic</strong>Infrastructure as Code &amp; Cloud Shell</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="../../analytics-config.js"></script>
+<script defer src="../../analytics.js"></script>
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
+</body>
+</html>

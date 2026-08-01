@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Service Accounts &amp; Identity — GCP ACE Exam Guide</title>
+<meta name="description" content="Service accounts and Cloud Identity for the GCP ACE exam: key management, impersonation, and workforce identity — the exam&#39;s favorite security traps, with free sample questions.">
+<link rel="canonical" href="https://cloudaceprep.com/topics/service-accounts-and-identity/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Service Accounts &amp; Identity — GCP ACE Exam Guide">
+<meta property="og:description" content="Service accounts and Cloud Identity for the GCP ACE exam: key management, impersonation, and workforce identity — the exam&#39;s favorite security traps, with free sample questions.">
+<meta property="og:url" content="https://cloudaceprep.com/topics/service-accounts-and-identity/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Service Accounts &amp; Identity — GCP ACE Exam Guide">
+<meta name="twitter:description" content="Service accounts and Cloud Identity for the GCP ACE exam: key management, impersonation, and workforce identity — the exam&#39;s favorite security traps, with free sample questions.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Topics","item":"https://cloudaceprep.com/topics/"},{"@type":"ListItem","position":4,"name":"Service Accounts & Identity","item":"https://cloudaceprep.com/topics/service-accounts-and-identity/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE: Service Accounts & Identity — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Service Accounts & Identity"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"Your company wants employees to use corporate credentials for Google Cloud instead of personal Gmail accounts, and it does not use Google Workspace. What should it set up?","acceptedAnswer":{"@type":"Answer","text":"Cloud Identity, then create the organization and manage users there — Cloud Identity provides managed corporate identities (and creates the Organization node) without requiring Google Workspace, and it can federate with an existing IdP such as Active Directory. Personal accounts are unmanaged, shared accounts destroy auditability, and service accounts are for workloads, not people."}},{"@type":"Question","name":"A junior developer asks why your Cloud Run service runs as an identity that no human ever logs into. What is a service account?","acceptedAnswer":{"@type":"Answer","text":"A special non-human identity used by applications/VMs to authenticate and be authorized via IAM — Service accounts are workload identities: code running as them gets tokens from the platform, and IAM roles bind to them like any principal. They're also resources someone can be granted control OVER (e.g., serviceAccountUser)."}},{"@type":"Question","name":"What is the recommended way to grant Google Cloud access to 60 developers who all need the same permissions?","acceptedAnswer":{"@type":"Answer","text":"Add them to a Google Group and grant the IAM role to the group — Granting roles to groups centralizes membership management: joining/leaving the group adds/removes access with a full audit trail. Individual grants are unmanageable at scale, shared accounts break accountability, and service accounts are for workloads."}},{"@type":"Question","name":"An application on one of your VMs needs to write objects into exactly one Cloud Storage bucket. What is the recommended setup?","acceptedAnswer":{"@type":"Answer","text":"Run the VM as a dedicated service account and grant that SA storage.objectCreator/objectAdmin ON THE BUCKET (not project-wide), with cloud-platform scope — Least privilege = dedicated SA + resource-level grant. The default-SA-with-Editor pattern is the historical anti-pattern being phased out; public-write buckets are abuse magnets."}},{"@type":"Question","name":"Your company already uses Active Directory on-premises. How do employees keep a single identity for Google Cloud?","acceptedAnswer":{"@type":"Answer","text":"Federate AD with Cloud Identity (e.g., Google Cloud Directory Sync + SSO/SAML) so AD remains the source of truth — Directory Sync provisions users/groups from AD into Cloud Identity, and SAML SSO lets AD (or an IdP like ADFS) authenticate them — one identity, centrally disabled when someone leaves. Manual account duplication and shared logins undermine security; API keys are not user identities."}},{"@type":"Question","name":"Creating a VM, you're unsure whether to restrict its legacy access scopes or rely on IAM roles for the attached service account. What is the modern guidance?","acceptedAnswer":{"@type":"Answer","text":"Set the cloud-platform scope and control access purely with IAM roles on the service account — Scopes are a legacy per-VM credential limiter; effective access = intersection of scopes and IAM. Recommended: full cloud-platform scope + least-privilege IAM, one control plane instead of two."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / <a href="../../topics/">Topics</a> / Service Accounts &amp; Identity</p>
+  <h1>Service Accounts &amp; Identity</h1>
+  <p class="lede">What actually gets tested on the Google Cloud Associate Cloud Engineer exam,
+  the traps to know, and 6 free sample questions with full explanations.</p>
+
+  <p>Service accounts are identities for <strong>workloads</strong>, not people — a VM, a Cloud Run service, or a CI pipeline authenticates as one instead of borrowing a human's credentials. They can hold IAM roles exactly like a user account, and the exam's central question about them is almost always the same shape: how does this workload get credentials, and is that the safest way to do it.</p>
+  <p>The safest way, in nearly every scenario the exam poses, is to <strong>attach</strong> the service account to the resource that needs it (a Compute Engine instance, a Cloud Run revision) rather than generate and download a long-lived JSON key. Downloaded keys are a recurring trap: they don't expire on their own, they're easy to leak into source control or a laptop, and rotating them is a manual, easy-to-forget process. When impersonation is on the table instead — one identity temporarily acting as a service account via <code>roles/iam.serviceAccountTokenCreator</code> — that's the modern, short-lived-credential alternative the exam wants you to recognize as the better answer.</p>
+  <p><strong>Cloud Identity</strong> is the separate, adjacent idea of managing the humans: it provisions corporate identities (and is what creates an Organization node in the resource hierarchy) without requiring a paid Google Workspace subscription, and it can federate with an existing identity provider via SAML SSO and directory sync so a company's existing AD accounts authenticate into Google Cloud without duplicate identity management.</p>
+
+  <div class="card">
+    <h3>Exam tips for this topic</h3>
+    <ul>
+      <li>Attaching a service account to the resource that uses it beats downloading a JSON key almost every time a question is framed around security — key leakage is the implied risk.</li>
+      <li>Impersonation (roles/iam.serviceAccountTokenCreator) issues short-lived credentials without ever distributing a key file — recognize it as the more modern answer.</li>
+      <li>Cloud Identity creates an Organization and manages people; it doesn&#39;t require Google Workspace, and it&#39;s what federates an existing on-prem AD via SAML/directory sync.</li>
+    </ul>
+  </div>
+
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
+  <h2>Sample questions — Service Accounts &amp; Identity</h2>
+  <p>These 6 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">Cloud Identity</span>
+    <p class="qtext">Your company wants employees to use corporate credentials for Google Cloud instead of personal Gmail accounts, and it does not use Google Workspace. What should it set up?</p>
+    <ul class="opts">
+      <li class="correct">Cloud Identity, then create the organization and manage users there<span class="tag">Correct</span></li>
+      <li>Have every employee create a personal Google account with the company domain in the name</li>
+      <li>Use only service accounts for humans</li>
+      <li>Create a shared admin Google account for the whole company</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud Identity provides managed corporate identities (and creates the Organization node) without requiring Google Workspace, and it can federate with an existing IdP such as Active Directory. Personal accounts are unmanaged, shared accounts destroy auditability, and service accounts are for workloads, not people.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Service accounts</span>
+    <p class="qtext">A junior developer asks why your Cloud Run service runs as an identity that no human ever logs into. What is a service account?</p>
+    <ul class="opts">
+      <li class="correct">A special non-human identity used by applications/VMs to authenticate and be authorized via IAM<span class="tag">Correct</span></li>
+      <li>A billing account login used by automated payment jobs</li>
+      <li>A Gmail alias registered for the application</li>
+      <li>A Kubernetes namespace that isolates workload identities</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Service accounts are workload identities: code running as them gets tokens from the platform, and IAM roles bind to them like any principal. They&#39;re also resources someone can be granted control OVER (e.g., serviceAccountUser).</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud Identity</span>
+    <p class="qtext">What is the recommended way to grant Google Cloud access to 60 developers who all need the same permissions?</p>
+    <ul class="opts">
+      <li class="correct">Add them to a Google Group and grant the IAM role to the group<span class="tag">Correct</span></li>
+      <li>Grant each of the 60 developers the role individually on every project they use</li>
+      <li>Create one shared user account that all of the developers log in with</li>
+      <li>Create 60 service accounts and distribute one key file to each developer</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Granting roles to groups centralizes membership management: joining/leaving the group adds/removes access with a full audit trail. Individual grants are unmanageable at scale, shared accounts break accountability, and service accounts are for workloads.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Service accounts</span>
+    <p class="qtext">An application on one of your VMs needs to write objects into exactly one Cloud Storage bucket. What is the recommended setup?</p>
+    <ul class="opts">
+      <li class="correct">Run the VM as a dedicated service account and grant that SA storage.objectCreator/objectAdmin ON THE BUCKET (not project-wide), with cloud-platform scope<span class="tag">Correct</span></li>
+      <li>Use the default Compute Engine service account, which already carries project-wide access</li>
+      <li>Store your personal credentials on the VM for the app to reuse</li>
+      <li>Make the bucket public-write so the app needs no credentials at all</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Least privilege = dedicated SA + resource-level grant. The default-SA-with-Editor pattern is the historical anti-pattern being phased out; public-write buckets are abuse magnets.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud Identity</span>
+    <p class="qtext">Your company already uses Active Directory on-premises. How do employees keep a single identity for Google Cloud?</p>
+    <ul class="opts">
+      <li class="correct">Federate AD with Cloud Identity (e.g., Google Cloud Directory Sync + SSO/SAML) so AD remains the source of truth<span class="tag">Correct</span></li>
+      <li>Manually create a matching Google account for every employee and ask each user to keep both passwords in sync themselves</li>
+      <li>Issue every employee an API key tied to their AD username instead of a user identity</li>
+      <li>Give all engineers one shared corporate login managed by the IT helpdesk</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Directory Sync provisions users/groups from AD into Cloud Identity, and SAML SSO lets AD (or an IdP like ADFS) authenticate them — one identity, centrally disabled when someone leaves. Manual account duplication and shared logins undermine security; API keys are not user identities.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Service accounts</span>
+    <p class="qtext">Creating a VM, you&#39;re unsure whether to restrict its legacy access scopes or rely on IAM roles for the attached service account. What is the modern guidance?</p>
+    <ul class="opts">
+      <li class="correct">Set the cloud-platform scope and control access purely with IAM roles on the service account<span class="tag">Correct</span></li>
+      <li>Restrict the VM to narrow scopes and skip IAM role management entirely</li>
+      <li>Set only scopes, since scopes override whatever IAM allows</li>
+      <li>Neither matters</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Scopes are a legacy per-VM credential limiter; effective access = intersection of scopes and IAM. Recommended: full cloud-platform scope + least-privilege IAM, one control plane instead of two.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this for real</h3>
+    <p>The app has dozens more questions on this and every other topic, with instant scoring,
+    spaced repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=5#view-home">Start practicing →</a>
+  </div>
+
+  <h2>This topic shows up in</h2>
+  <div class="domain-grid">
+    <a href="../../domains/setting-up-a-cloud-solution-environment/"><strong>Domain 1</strong>Setting Up a Cloud Solution Environment</a>
+      <a href="../../domains/configuring-access-and-security/"><strong>Domain 5</strong>Configuring Access and Security</a>
+  </div>
+
+  <h2>Other topics</h2>
+  <div class="domain-grid">
+    <a href="../iam-roles-and-permissions/"><strong>Topic</strong>IAM Roles &amp; Permissions</a>
+      <a href="../billing-pricing-and-cost-management/"><strong>Topic</strong>Billing, Pricing &amp; Cost Management</a>
+      <a href="../google-kubernetes-engine-gke/"><strong>Topic</strong>Google Kubernetes Engine (GKE)</a>
+      <a href="../gcloud-cli-commands/"><strong>Topic</strong>gcloud CLI Commands</a>
+      <a href="../choosing-the-right-compute-option/"><strong>Topic</strong>Choosing the Right Compute Option</a>
+      <a href="../compute-engine-deployment-and-operations/"><strong>Topic</strong>Compute Engine Deployment &amp; Operations</a>
+      <a href="../cloud-monitoring-logging-and-audit-logs/"><strong>Topic</strong>Cloud Monitoring, Logging &amp; Audit Logs</a>
+      <a href="../vpc-networking-and-load-balancing/"><strong>Topic</strong>VPC Networking &amp; Load Balancing</a>
+      <a href="../choosing-a-database/"><strong>Topic</strong>Choosing a Database on Google Cloud</a>
+      <a href="../resource-hierarchy-projects-and-apis/"><strong>Topic</strong>Resource Hierarchy, Projects &amp; APIs</a>
+      <a href="../cloud-storage-classes-access-and-security/"><strong>Topic</strong>Cloud Storage: Classes, Access &amp; Security</a>
+      <a href="../serverless-compute-cloud-run-and-app-engine/"><strong>Topic</strong>Serverless Compute: Cloud Run &amp; App Engine</a>
+      <a href="../data-protection-encryption-and-secret-manager/"><strong>Topic</strong>Data Protection: Encryption &amp; Secret Manager</a>
+      <a href="../infrastructure-as-code-and-cloud-shell/"><strong>Topic</strong>Infrastructure as Code &amp; Cloud Shell</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="../../analytics-config.js"></script>
+<script defer src="../../analytics.js"></script>
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
+</body>
+</html>

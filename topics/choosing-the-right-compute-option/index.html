@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choosing the Right Compute Option — GCP ACE Exam Guide</title>
+<meta name="description" content="Compute Engine vs GKE vs Cloud Run vs App Engine vs Cloud Functions for the GCP ACE exam — the decision framework the exam actually tests, plus free sample questions.">
+<link rel="canonical" href="https://cloudaceprep.com/topics/choosing-the-right-compute-option/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Choosing the Right Compute Option — GCP ACE Exam Guide">
+<meta property="og:description" content="Compute Engine vs GKE vs Cloud Run vs App Engine vs Cloud Functions for the GCP ACE exam — the decision framework the exam actually tests, plus free sample questions.">
+<meta property="og:url" content="https://cloudaceprep.com/topics/choosing-the-right-compute-option/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Choosing the Right Compute Option — GCP ACE Exam Guide">
+<meta name="twitter:description" content="Compute Engine vs GKE vs Cloud Run vs App Engine vs Cloud Functions for the GCP ACE exam — the decision framework the exam actually tests, plus free sample questions.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Topics","item":"https://cloudaceprep.com/topics/"},{"@type":"ListItem","position":4,"name":"Choosing the Right Compute Option","item":"https://cloudaceprep.com/topics/choosing-the-right-compute-option/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE: Choosing the Right Compute Option — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Choosing the Right Compute Option"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"You need to run a stateless containerized HTTP API that scales to zero when idle and requires no cluster management. Which service fits best?","acceptedAnswer":{"@type":"Answer","text":"Cloud Run — Cloud Run runs containers serverlessly, scales from zero to many instances per request load, and needs no infrastructure management. MIGs and GKE both leave you managing VMs/clusters and don't scale to zero (GKE Autopilot pods still need the cluster); bare metal is the opposite of the requirement."}},{"@type":"Question","name":"A team must lift-and-shift a legacy Windows application that needs full OS control and a specific licensed agent installed. Which compute option?","acceptedAnswer":{"@type":"Answer","text":"Compute Engine VM — Full OS control, custom agents, and lift-and-shift map to Compute Engine — you own the OS. Serverless platforms (Cloud Run, functions, App Engine standard) abstract the OS away and can't host arbitrary Windows services."}},{"@type":"Question","name":"Your microservices need Kubernetes features (custom operators, DaemonSets, service mesh) but the team wants Google to manage nodes, scaling, and security patching. What do you choose?","acceptedAnswer":{"@type":"Answer","text":"GKE Autopilot — Autopilot is full Kubernetes with Google operating the nodes — you pay per pod and keep K8s APIs. Standard leaves node management to you; Cloud Run hides Kubernetes entirely, losing the K8s-specific features required here."}},{"@type":"Question","name":"You need code to run for ~2 seconds in response to each new file uploaded to a Cloud Storage bucket. The simplest fit is:","acceptedAnswer":{"@type":"Answer","text":"A Cloud Run function triggered by the bucket's finalize event — Event-driven, short-lived, per-object work is the textbook serverless function use case — the storage event invokes the function directly (via Eventarc). Polling wastes money, GKE is heavy machinery for 2 seconds of work, and Cloud SQL triggers don't respond to bucket events."}},{"@type":"Question","name":"An App Engine standard app is a good fit when: (Choose two.)","acceptedAnswer":{"@type":"Answer","text":"Traffic is spiky and scaling to zero between requests saves money — App Engine standard runs supported language runtimes in a sandbox with request-based autoscaling to zero. The sandbox has no durable local disk and certainly no kernel access — those needs point to Compute Engine (or flexible/Cloud Run for containers)."}},{"@type":"Question","name":"A monthly batch job needs 96 vCPUs for 3 hours; the rest of the month, nothing. The most cost-effective design is:","acceptedAnswer":{"@type":"Answer","text":"Create instances (ideally Spot) on demand for the run, then delete them — Cloud economics reward ephemeral usage: create → run 3h → delete costs ~1/240th of an always-on VM, and Spot cuts that further for interruptible work. CUDs and sole tenancy commit you to constant capacity; Cloud Shell isn't for heavy compute."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / <a href="../../topics/">Topics</a> / Choosing the Right Compute Option</p>
+  <h1>Choosing the Right Compute Option</h1>
+  <p class="lede">What actually gets tested on the Google Cloud Associate Cloud Engineer exam,
+  the traps to know, and 6 free sample questions with full explanations.</p>
+
+  <p>This is a pure decision-framework topic, and the exam rewards recognizing the scenario's keywords over knowing every product's feature list. <strong>Compute Engine</strong> is the answer whenever you see full OS control, custom agents, specialized hardware, or a lift-and-shift migration — you own the operating system, with everything that implies. <strong>Serverless platforms</strong> (Cloud Run, Cloud Functions, App Engine standard) abstract the OS away entirely; whenever a scenario says "minimize operational overhead" or "no infrastructure to manage," the answer is one of these three, not Compute Engine or GKE.</p>
+  <p>Within serverless, the differentiator is trigger shape: <strong>Cloud Run</strong> runs containers that scale from zero based on request load with no infrastructure to manage — the general-purpose serverless answer for anything that fits in a container. <strong>Cloud Functions</strong> is the textbook choice for event-driven, short-lived, per-object work (a Cloud Storage upload invoking a function directly via Eventarc is the classic exam scenario); polling for events instead of reacting to them directly is a frequent wrong-answer setup.</p>
+  <p>Between the two container-orchestration options, <strong>GKE Autopilot</strong> is full Kubernetes with Google operating the nodes (you pay per pod, keep the K8s API surface), <strong>GKE Standard</strong> leaves node management to you for more control, and <strong>Cloud Run</strong> hides Kubernetes entirely for teams that just want a container to run — reach for GKE specifically when a scenario needs Kubernetes-native features (custom schedulers, specific networking/CRDs), and Cloud Run when it just needs "run this container."</p>
+
+  <div class="card">
+    <h3>Exam tips for this topic</h3>
+    <ul>
+      <li>&quot;Minimize ops overhead / no infrastructure to manage&quot; points to Cloud Run, Cloud Functions, or App Engine — never Compute Engine or GKE Standard.</li>
+      <li>Event-driven, short-lived, per-object triggers (e.g. a Cloud Storage upload) point to Cloud Functions via Eventarc, not a polling loop on a VM.</li>
+      <li>Reach for GKE specifically when a scenario needs Kubernetes-native features; reach for Cloud Run when it just needs to run a container without touching K8s at all.</li>
+    </ul>
+  </div>
+
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
+  <h2>Sample questions — Choosing the Right Compute Option</h2>
+  <p>These 6 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">Compute choice</span>
+    <p class="qtext">You need to run a stateless containerized HTTP API that scales to zero when idle and requires no cluster management. Which service fits best?</p>
+    <ul class="opts">
+      <li class="correct">Cloud Run<span class="tag">Correct</span></li>
+      <li>Compute Engine managed instance group</li>
+      <li>GKE Standard</li>
+      <li>Bare metal solution</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud Run runs containers serverlessly, scales from zero to many instances per request load, and needs no infrastructure management. MIGs and GKE both leave you managing VMs/clusters and don&#39;t scale to zero (GKE Autopilot pods still need the cluster); bare metal is the opposite of the requirement.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Compute choice</span>
+    <p class="qtext">A team must lift-and-shift a legacy Windows application that needs full OS control and a specific licensed agent installed. Which compute option?</p>
+    <ul class="opts">
+      <li class="correct">Compute Engine VM<span class="tag">Correct</span></li>
+      <li>Cloud Run</li>
+      <li>Cloud Run functions</li>
+      <li>App Engine standard</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Full OS control, custom agents, and lift-and-shift map to Compute Engine — you own the OS. Serverless platforms (Cloud Run, functions, App Engine standard) abstract the OS away and can&#39;t host arbitrary Windows services.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Compute choice</span>
+    <p class="qtext">Your microservices need Kubernetes features (custom operators, DaemonSets, service mesh) but the team wants Google to manage nodes, scaling, and security patching. What do you choose?</p>
+    <ul class="opts">
+      <li class="correct">GKE Autopilot<span class="tag">Correct</span></li>
+      <li>GKE Standard</li>
+      <li>Cloud Run</li>
+      <li>Unmanaged instance group</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Autopilot is full Kubernetes with Google operating the nodes — you pay per pod and keep K8s APIs. Standard leaves node management to you; Cloud Run hides Kubernetes entirely, losing the K8s-specific features required here.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Compute choice</span>
+    <p class="qtext">You need code to run for ~2 seconds in response to each new file uploaded to a Cloud Storage bucket. The simplest fit is:</p>
+    <ul class="opts">
+      <li class="correct">A Cloud Run function triggered by the bucket&#39;s finalize event<span class="tag">Correct</span></li>
+      <li>A small VM that polls the bucket for new objects in a loop</li>
+      <li>A GKE cluster running a custom controller that watches the bucket</li>
+      <li>A Cloud SQL trigger fired when the object metadata row is inserted</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Event-driven, short-lived, per-object work is the textbook serverless function use case — the storage event invokes the function directly (via Eventarc). Polling wastes money, GKE is heavy machinery for 2 seconds of work, and Cloud SQL triggers don&#39;t respond to bucket events.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Compute choice</span>
+    <p class="qtext">An App Engine standard app is a good fit when: (Choose two.)</p>
+    <ul class="opts">
+      <li class="correct">Traffic is spiky and scaling to zero between requests saves money<span class="tag">Correct</span></li>
+      <li class="correct">The app is a supported-runtime web app needing zero server management<span class="tag">Correct</span></li>
+      <li>The app needs to write files to its local disk and keep them permanently</li>
+      <li>The app requires a custom kernel module loaded at boot time</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> App Engine standard runs supported language runtimes in a sandbox with request-based autoscaling to zero. The sandbox has no durable local disk and certainly no kernel access — those needs point to Compute Engine (or flexible/Cloud Run for containers).</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Compute choice</span>
+    <p class="qtext">A monthly batch job needs 96 vCPUs for 3 hours; the rest of the month, nothing. The most cost-effective design is:</p>
+    <ul class="opts">
+      <li class="correct">Create instances (ideally Spot) on demand for the run, then delete them<span class="tag">Correct</span></li>
+      <li>Keep a 96-vCPU VM running all month with committed use discounts</li>
+      <li>Buy a sole-tenant node so the job always has dedicated capacity</li>
+      <li>Run the job in Cloud Shell, which is free for up to 50 hours a week</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud economics reward ephemeral usage: create → run 3h → delete costs ~1/240th of an always-on VM, and Spot cuts that further for interruptible work. CUDs and sole tenancy commit you to constant capacity; Cloud Shell isn&#39;t for heavy compute.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this for real</h3>
+    <p>The app has dozens more questions on this and every other topic, with instant scoring,
+    spaced repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=2#view-home">Start practicing →</a>
+  </div>
+
+  <h2>This topic shows up in</h2>
+  <div class="domain-grid">
+    <a href="../../domains/planning-and-configuring-a-cloud-solution/"><strong>Domain 2</strong>Planning &amp; Configuring a Cloud Solution</a>
+  </div>
+
+  <h2>Other topics</h2>
+  <div class="domain-grid">
+    <a href="../iam-roles-and-permissions/"><strong>Topic</strong>IAM Roles &amp; Permissions</a>
+      <a href="../service-accounts-and-identity/"><strong>Topic</strong>Service Accounts &amp; Identity</a>
+      <a href="../billing-pricing-and-cost-management/"><strong>Topic</strong>Billing, Pricing &amp; Cost Management</a>
+      <a href="../google-kubernetes-engine-gke/"><strong>Topic</strong>Google Kubernetes Engine (GKE)</a>
+      <a href="../gcloud-cli-commands/"><strong>Topic</strong>gcloud CLI Commands</a>
+      <a href="../compute-engine-deployment-and-operations/"><strong>Topic</strong>Compute Engine Deployment &amp; Operations</a>
+      <a href="../cloud-monitoring-logging-and-audit-logs/"><strong>Topic</strong>Cloud Monitoring, Logging &amp; Audit Logs</a>
+      <a href="../vpc-networking-and-load-balancing/"><strong>Topic</strong>VPC Networking &amp; Load Balancing</a>
+      <a href="../choosing-a-database/"><strong>Topic</strong>Choosing a Database on Google Cloud</a>
+      <a href="../resource-hierarchy-projects-and-apis/"><strong>Topic</strong>Resource Hierarchy, Projects &amp; APIs</a>
+      <a href="../cloud-storage-classes-access-and-security/"><strong>Topic</strong>Cloud Storage: Classes, Access &amp; Security</a>
+      <a href="../serverless-compute-cloud-run-and-app-engine/"><strong>Topic</strong>Serverless Compute: Cloud Run &amp; App Engine</a>
+      <a href="../data-protection-encryption-and-secret-manager/"><strong>Topic</strong>Data Protection: Encryption &amp; Secret Manager</a>
+      <a href="../infrastructure-as-code-and-cloud-shell/"><strong>Topic</strong>Infrastructure as Code &amp; Cloud Shell</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="../../analytics-config.js"></script>
+<script defer src="../../analytics.js"></script>
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
+</body>
+</html>

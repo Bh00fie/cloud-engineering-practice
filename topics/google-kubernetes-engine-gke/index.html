@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Google Kubernetes Engine (GKE) — GCP ACE Exam Guide</title>
+<meta name="description" content="GKE for the GCP ACE exam: zonal vs regional clusters, Autopilot vs Standard, Deployments vs Services, and day-2 operations — plus free sample questions with explanations.">
+<link rel="canonical" href="https://cloudaceprep.com/topics/google-kubernetes-engine-gke/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Google Kubernetes Engine (GKE) — GCP ACE Exam Guide">
+<meta property="og:description" content="GKE for the GCP ACE exam: zonal vs regional clusters, Autopilot vs Standard, Deployments vs Services, and day-2 operations — plus free sample questions with explanations.">
+<meta property="og:url" content="https://cloudaceprep.com/topics/google-kubernetes-engine-gke/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Google Kubernetes Engine (GKE) — GCP ACE Exam Guide">
+<meta name="twitter:description" content="GKE for the GCP ACE exam: zonal vs regional clusters, Autopilot vs Standard, Deployments vs Services, and day-2 operations — plus free sample questions with explanations.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Topics","item":"https://cloudaceprep.com/topics/"},{"@type":"ListItem","position":4,"name":"Google Kubernetes Engine (GKE)","item":"https://cloudaceprep.com/topics/google-kubernetes-engine-gke/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE: Google Kubernetes Engine (GKE) — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Google Kubernetes Engine (GKE)"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"Your team needs a basic GKE cluster named apps with 3 nodes per zone across a region. Which command creates it?","acceptedAnswer":{"@type":"Answer","text":"gcloud container clusters create apps --region=us-central1 --num-nodes=3 — GKE clusters are managed via gcloud container clusters ...; --region makes a regional (multi-zone) cluster where --num-nodes applies per zone. kubectl talks to an existing cluster — it can't create one."}},{"@type":"Question","name":"A teammate asks who is responsible for upgrading the Kubernetes control plane of your GKE Standard cluster. How do control-plane upgrades happen?","acceptedAnswer":{"@type":"Answer","text":"Google auto-upgrades the control plane (per release channel); you influence timing with maintenance windows/exclusions — The control plane is Google-managed; channels + maintenance windows control cadence. Nodes can auto-upgrade too (default in channels). There is no SSH access to GKE masters."}},{"@type":"Question","name":"Right after creating your GKE cluster, kubectl on your laptop complains it has no configured context. What do you run?","acceptedAnswer":{"@type":"Answer","text":"gcloud container clusters get-credentials apps --region=us-central1 — get-credentials writes the cluster's endpoint and auth config into kubeconfig so kubectl can connect. Logging in again doesn't add cluster contexts, and nodes are not the management path."}},{"@type":"Question","name":"A node in your GKE cluster has been failing its health checks for several minutes. What does node auto-repair do about it?","acceptedAnswer":{"@type":"Answer","text":"Drains and recreates the unhealthy node automatically — Auto-repair (default on) recreates persistently unhealthy nodes to restore capacity. It's node-level self-healing, complementing pod rescheduling by Kubernetes."}},{"@type":"Question","name":"Your stateless web pod must always run 4 replicas and support rolling updates of its image. Which Kubernetes object manages this?","acceptedAnswer":{"@type":"Answer","text":"A Deployment — Deployments manage ReplicaSets to maintain desired replica counts and orchestrate rolling updates/rollbacks. Services provide stable networking to pods; ConfigMaps hold configuration; Namespaces scope names."}},{"@type":"Question","name":"A pod in your cluster is stuck in CrashLoopBackOff and you need the last 100 log lines from the crashed container instance. Which command?","acceptedAnswer":{"@type":"Answer","text":"kubectl logs pod-name --previous --tail=100 — --previous fetches logs from the prior (crashed) container — essential for CrashLoopBackOff debugging. GKE logs also flow to Cloud Logging, but the kubectl form shown is the direct route. Pods aren't SSH targets."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / <a href="../../topics/">Topics</a> / Google Kubernetes Engine (GKE)</p>
+  <h1>Google Kubernetes Engine (GKE)</h1>
+  <p class="lede">What actually gets tested on the Google Cloud Associate Cloud Engineer exam,
+  the traps to know, and 6 free sample questions with full explanations.</p>
+
+  <p>Creating a cluster is <code>gcloud container clusters create</code>; the flag that matters most conceptually is <code>--region</code> versus the zonal default — <code>--region</code> makes a regional (multi-zone) cluster where <code>--num-nodes</code> applies <em>per zone</em>, which is a common source of "why do I have more nodes than I asked for" confusion in scenario questions. Once the cluster exists, <code>gcloud container clusters get-credentials</code> writes its endpoint and auth config into your local kubeconfig so <code>kubectl</code> can talk to it — logging in again doesn't add a cluster context, and it's a frequent wrong-answer distractor.</p>
+  <p><strong>Autopilot vs Standard</strong> is the exam's other core GKE decision: Autopilot is fully managed Kubernetes where Google operates the nodes and you pay per pod, trading some control for zero node management; Standard leaves node pool sizing, upgrades, and maintenance to you in exchange for more control. "Minimize operational overhead" in a GKE question usually points to Autopilot the same way it points to Cloud Run in a broader compute-choice question.</p>
+  <p>On the workload side, know what each object is for without needing deep YAML mastery: <strong>Deployments</strong> manage ReplicaSets to keep a desired replica count running and orchestrate rolling updates/rollbacks; <strong>Services</strong> give pods stable networking, where <code>type: LoadBalancer</code> specifically provisions a Google Cloud passthrough load balancer with an external IP (Layer 4) — for HTTP(S) routing you'd reach for an Ingress instead, and the exam tests that L4-vs-L7 distinction directly.</p>
+
+  <div class="card">
+    <h3>Exam tips for this topic</h3>
+    <ul>
+      <li>--region creates a regional cluster where --num-nodes applies per zone, not total — a common source of &quot;more nodes than expected&quot; scenario questions.</li>
+      <li>&quot;Minimize ops overhead / no node management&quot; in a GKE question points to Autopilot over Standard the same way it points to Cloud Run over Compute Engine elsewhere.</li>
+      <li>A Service of type LoadBalancer is Layer 4 with an external IP; Ingress is Layer 7 HTTP(S) routing. The exam tests this exact distinction more than once.</li>
+    </ul>
+  </div>
+
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
+  <h2>Sample questions — Google Kubernetes Engine (GKE)</h2>
+  <p>These 6 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">GKE</span>
+    <p class="qtext">Your team needs a basic GKE cluster named apps with 3 nodes per zone across a region. Which command creates it?</p>
+    <ul class="opts">
+      <li class="correct">gcloud container clusters create apps --region=us-central1 --num-nodes=3<span class="tag">Correct</span></li>
+      <li>gcloud gke create apps 3</li>
+      <li>kubectl create cluster apps</li>
+      <li>gcloud compute clusters create apps</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> GKE clusters are managed via gcloud container clusters ...; --region makes a regional (multi-zone) cluster where --num-nodes applies per zone. kubectl talks to an existing cluster — it can&#39;t create one.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">GKE ops</span>
+    <p class="qtext">A teammate asks who is responsible for upgrading the Kubernetes control plane of your GKE Standard cluster. How do control-plane upgrades happen?</p>
+    <ul class="opts">
+      <li class="correct">Google auto-upgrades the control plane (per release channel); you influence timing with maintenance windows/exclusions<span class="tag">Correct</span></li>
+      <li>You SSH into master nodes and apt upgrade</li>
+      <li>Upgrades never happen</li>
+      <li>kubectl upgrade control-plane</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> The control plane is Google-managed; channels + maintenance windows control cadence. Nodes can auto-upgrade too (default in channels). There is no SSH access to GKE masters.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">GKE</span>
+    <p class="qtext">Right after creating your GKE cluster, kubectl on your laptop complains it has no configured context. What do you run?</p>
+    <ul class="opts">
+      <li class="correct">gcloud container clusters get-credentials apps --region=us-central1<span class="tag">Correct</span></li>
+      <li>kubectl config new</li>
+      <li>gcloud auth login again</li>
+      <li>ssh into a node</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> get-credentials writes the cluster&#39;s endpoint and auth config into kubeconfig so kubectl can connect. Logging in again doesn&#39;t add cluster contexts, and nodes are not the management path.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">GKE ops</span>
+    <p class="qtext">A node in your GKE cluster has been failing its health checks for several minutes. What does node auto-repair do about it?</p>
+    <ul class="opts">
+      <li class="correct">Drains and recreates the unhealthy node automatically<span class="tag">Correct</span></li>
+      <li>Emails you and waits</li>
+      <li>Deletes the whole cluster</li>
+      <li>Turns off the health checks</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Auto-repair (default on) recreates persistently unhealthy nodes to restore capacity. It&#39;s node-level self-healing, complementing pod rescheduling by Kubernetes.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">GKE</span>
+    <p class="qtext">Your stateless web pod must always run 4 replicas and support rolling updates of its image. Which Kubernetes object manages this?</p>
+    <ul class="opts">
+      <li class="correct">A Deployment<span class="tag">Correct</span></li>
+      <li>A Service</li>
+      <li>A ConfigMap</li>
+      <li>A Namespace</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Deployments manage ReplicaSets to maintain desired replica counts and orchestrate rolling updates/rollbacks. Services provide stable networking to pods; ConfigMaps hold configuration; Namespaces scope names.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">GKE ops</span>
+    <p class="qtext">A pod in your cluster is stuck in CrashLoopBackOff and you need the last 100 log lines from the crashed container instance. Which command?</p>
+    <ul class="opts">
+      <li class="correct">kubectl logs pod-name --previous --tail=100<span class="tag">Correct</span></li>
+      <li>kubectl describe logs</li>
+      <li>gcloud logging tail pod-name</li>
+      <li>ssh into the pod</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> --previous fetches logs from the prior (crashed) container — essential for CrashLoopBackOff debugging. GKE logs also flow to Cloud Logging, but the kubectl form shown is the direct route. Pods aren&#39;t SSH targets.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this for real</h3>
+    <p>The app has dozens more questions on this and every other topic, with instant scoring,
+    spaced repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=3#view-home">Start practicing →</a>
+  </div>
+
+  <h2>This topic shows up in</h2>
+  <div class="domain-grid">
+    <a href="../../domains/planning-and-configuring-a-cloud-solution/"><strong>Domain 2</strong>Planning &amp; Configuring a Cloud Solution</a>
+      <a href="../../domains/deploying-and-implementing-a-cloud-solution/"><strong>Domain 3</strong>Deploying &amp; Implementing a Cloud Solution</a>
+      <a href="../../domains/ensuring-successful-operation/"><strong>Domain 4</strong>Ensuring Successful Operation</a>
+  </div>
+
+  <h2>Other topics</h2>
+  <div class="domain-grid">
+    <a href="../iam-roles-and-permissions/"><strong>Topic</strong>IAM Roles &amp; Permissions</a>
+      <a href="../service-accounts-and-identity/"><strong>Topic</strong>Service Accounts &amp; Identity</a>
+      <a href="../billing-pricing-and-cost-management/"><strong>Topic</strong>Billing, Pricing &amp; Cost Management</a>
+      <a href="../gcloud-cli-commands/"><strong>Topic</strong>gcloud CLI Commands</a>
+      <a href="../choosing-the-right-compute-option/"><strong>Topic</strong>Choosing the Right Compute Option</a>
+      <a href="../compute-engine-deployment-and-operations/"><strong>Topic</strong>Compute Engine Deployment &amp; Operations</a>
+      <a href="../cloud-monitoring-logging-and-audit-logs/"><strong>Topic</strong>Cloud Monitoring, Logging &amp; Audit Logs</a>
+      <a href="../vpc-networking-and-load-balancing/"><strong>Topic</strong>VPC Networking &amp; Load Balancing</a>
+      <a href="../choosing-a-database/"><strong>Topic</strong>Choosing a Database on Google Cloud</a>
+      <a href="../resource-hierarchy-projects-and-apis/"><strong>Topic</strong>Resource Hierarchy, Projects &amp; APIs</a>
+      <a href="../cloud-storage-classes-access-and-security/"><strong>Topic</strong>Cloud Storage: Classes, Access &amp; Security</a>
+      <a href="../serverless-compute-cloud-run-and-app-engine/"><strong>Topic</strong>Serverless Compute: Cloud Run &amp; App Engine</a>
+      <a href="../data-protection-encryption-and-secret-manager/"><strong>Topic</strong>Data Protection: Encryption &amp; Secret Manager</a>
+      <a href="../infrastructure-as-code-and-cloud-shell/"><strong>Topic</strong>Infrastructure as Code &amp; Cloud Shell</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="../../analytics-config.js"></script>
+<script defer src="../../analytics.js"></script>
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
+</body>
+</html>

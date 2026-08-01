@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Infrastructure as Code &amp; Cloud Shell — GCP ACE Exam Guide</title>
+<meta name="description" content="Cloud Shell and infrastructure-as-code basics for the GCP ACE exam: what&#39;s ephemeral, what persists, and when to reach for Terraform — plus free sample questions.">
+<link rel="canonical" href="https://cloudaceprep.com/topics/infrastructure-as-code-and-cloud-shell/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Infrastructure as Code &amp; Cloud Shell — GCP ACE Exam Guide">
+<meta property="og:description" content="Cloud Shell and infrastructure-as-code basics for the GCP ACE exam: what&#39;s ephemeral, what persists, and when to reach for Terraform — plus free sample questions.">
+<meta property="og:url" content="https://cloudaceprep.com/topics/infrastructure-as-code-and-cloud-shell/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Infrastructure as Code &amp; Cloud Shell — GCP ACE Exam Guide">
+<meta name="twitter:description" content="Cloud Shell and infrastructure-as-code basics for the GCP ACE exam: what&#39;s ephemeral, what persists, and when to reach for Terraform — plus free sample questions.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Topics","item":"https://cloudaceprep.com/topics/"},{"@type":"ListItem","position":4,"name":"Infrastructure as Code & Cloud Shell","item":"https://cloudaceprep.com/topics/infrastructure-as-code-and-cloud-shell/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE: Infrastructure as Code & Cloud Shell — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Infrastructure as Code & Cloud Shell"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"You need a machine with gcloud, kubectl, and terraform pre-installed to run a few admin commands, without installing anything locally. What is the fastest option?","acceptedAnswer":{"@type":"Answer","text":"Use Cloud Shell from the Google Cloud console — Cloud Shell is a free, browser-based shell with the Cloud SDK, kubectl, terraform, and many tools preinstalled, plus 5 GB of persistent home storage — ideal for quick admin work. A VM or local Docker adds setup time, and the mobile app is for monitoring and basic management, not full CLI work."}},{"@type":"Question","name":"Your team wants all infrastructure declared in versioned code with plan/preview before changes. The de-facto standard tool on Google Cloud today is:","acceptedAnswer":{"@type":"Answer","text":"Terraform with the Google provider (Infrastructure Manager as the managed runner) — Terraform is the dominant IaC on Google Cloud (Google's Infrastructure Manager runs it as a service); it previews plans and stores state. Deployment Manager is legacy/deprecated-adjacent for new projects, and script piles have no state or plan."}},{"@type":"Question","name":"Which statement about Cloud Shell is true?","acceptedAnswer":{"@type":"Answer","text":"Your $HOME directory persists between sessions, but the VM itself is ephemeral — Cloud Shell provisions an ephemeral VM per session, but mounts a persistent 5 GB $HOME so files, scripts, and configs survive. Software installed outside $HOME is lost when the session recycles, and no disk management is needed or possible."}},{"@type":"Question","name":"A teammate reviewing your CI pipeline asks what its terraform plan and terraform apply steps do respectively. What is the answer?","acceptedAnswer":{"@type":"Answer","text":"plan previews changes between config and real state; apply executes them — plan computes an execution diff (create/update/destroy) without touching anything; apply performs it (showing the plan again first by default). Nothing is destroyed unless the plan says so."}},{"@type":"Question","name":"Which is a limitation of Cloud Shell you should plan around?","acceptedAnswer":{"@type":"Answer","text":"Sessions time out with inactivity and the VM is recycled, so long-running jobs shouldn't run there — Cloud Shell is for interactive admin work: sessions end after inactivity (about 20 minutes) and there are weekly usage limits, so long jobs belong on a VM, Cloud Run job, or build service. It is free, has the SDK preinstalled, and has outbound internet access."}},{"@type":"Question","name":"You are pitching IaC to a team at your company that manages everything by console clicking. Why is IaC preferred for production? (Choose two.)","acceptedAnswer":{"@type":"Answer","text":"Changes are reviewable/versioned and environments are reproducible — IaC buys review, history, reproducibility, and drift detection — governance benefits. It has zero effect on runtime performance and complements (never replaces) IAM."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / <a href="../../topics/">Topics</a> / Infrastructure as Code &amp; Cloud Shell</p>
+  <h1>Infrastructure as Code &amp; Cloud Shell</h1>
+  <p class="lede">What actually gets tested on the Google Cloud Associate Cloud Engineer exam,
+  the traps to know, and 6 free sample questions with full explanations.</p>
+
+  <p><strong>Cloud Shell</strong> is a free, browser-based shell with the Cloud SDK, <code>kubectl</code>, Terraform, and most common tools preinstalled — genuinely useful for interactive admin work without setting up a local environment. The exam-relevant detail is what persists and what doesn't: Cloud Shell provisions an <strong>ephemeral VM per session</strong>, but mounts a <strong>persistent 5 GB <code>$HOME</code></strong>, so files, scripts, and configs saved there survive between sessions while anything installed <em>outside</em> <code>$HOME</code> does not. Sessions also end after roughly 20 minutes of inactivity and are subject to weekly usage limits, which makes Cloud Shell wrong for long-running jobs — those belong on a VM, Cloud Build, or another durable compute option.</p>
+  <p>Cloud Shell also includes a full graphical code editor over your persistent <code>$HOME</code>, plus a <strong>Web Preview</strong> feature that proxies a port from the Cloud Shell VM to your browser — useful for quickly checking a locally-running web app without deploying it anywhere first.</p>
+  <p>On <strong>infrastructure as code</strong> more broadly: the exam doesn't expect deep Terraform authorship, but it does expect you to recognize IaC as the right answer whenever a scenario is about repeatable, version-controlled infrastructure changes rather than manual console clicks — the same instinct that favors instance templates + managed instance groups over hand-created VMs, or Deployment Manager/Terraform over a one-off gcloud command typed once and never recorded anywhere.</p>
+
+  <div class="card">
+    <h3>Exam tips for this topic</h3>
+    <ul>
+      <li>Cloud Shell&#39;s VM is ephemeral per session, but $HOME (5 GB) persists — anything installed outside $HOME is gone at the next session.</li>
+      <li>Cloud Shell sessions end after ~20 minutes idle and have weekly usage limits — wrong tool for long-running jobs; use a VM, Cloud Build, or another durable option instead.</li>
+      <li>&quot;Repeatable&quot; or &quot;version-controlled&quot; infrastructure changes point toward IaC (Terraform/Deployment Manager) over manual console clicks or one-off commands.</li>
+    </ul>
+  </div>
+
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
+  <h2>Sample questions — Infrastructure as Code &amp; Cloud Shell</h2>
+  <p>These 6 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">Cloud Shell</span>
+    <p class="qtext">You need a machine with gcloud, kubectl, and terraform pre-installed to run a few admin commands, without installing anything locally. What is the fastest option?</p>
+    <ul class="opts">
+      <li class="correct">Use Cloud Shell from the Google Cloud console<span class="tag">Correct</span></li>
+      <li>Create a Compute Engine VM and install the tools</li>
+      <li>Use the Cloud Mobile App</li>
+      <li>Install Docker locally and pull the SDK image</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud Shell is a free, browser-based shell with the Cloud SDK, kubectl, terraform, and many tools preinstalled, plus 5 GB of persistent home storage — ideal for quick admin work. A VM or local Docker adds setup time, and the mobile app is for monitoring and basic management, not full CLI work.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">IaC</span>
+    <p class="qtext">Your team wants all infrastructure declared in versioned code with plan/preview before changes. The de-facto standard tool on Google Cloud today is:</p>
+    <ul class="opts">
+      <li class="correct">Terraform with the Google provider (Infrastructure Manager as the managed runner)<span class="tag">Correct</span></li>
+      <li>Bash scripts of gcloud commands</li>
+      <li>Deployment Manager (recommended for all new work)</li>
+      <li>Editing the console faster</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Terraform is the dominant IaC on Google Cloud (Google&#39;s Infrastructure Manager runs it as a service); it previews plans and stores state. Deployment Manager is legacy/deprecated-adjacent for new projects, and script piles have no state or plan.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud Shell</span>
+    <p class="qtext">Which statement about Cloud Shell is true?</p>
+    <ul class="opts">
+      <li class="correct">Your $HOME directory persists between sessions, but the VM itself is ephemeral<span class="tag">Correct</span></li>
+      <li>The entire VM persists indefinitely, including installed system packages</li>
+      <li>Nothing persists between sessions</li>
+      <li>It requires you to attach your own persistent disk</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud Shell provisions an ephemeral VM per session, but mounts a persistent 5 GB $HOME so files, scripts, and configs survive. Software installed outside $HOME is lost when the session recycles, and no disk management is needed or possible.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">IaC</span>
+    <p class="qtext">A teammate reviewing your CI pipeline asks what its terraform plan and terraform apply steps do respectively. What is the answer?</p>
+    <ul class="opts">
+      <li class="correct">plan previews changes between config and real state; apply executes them<span class="tag">Correct</span></li>
+      <li>plan applies changes; apply schedules them</li>
+      <li>Both only validate syntax</li>
+      <li>plan destroys unmanaged resources</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> plan computes an execution diff (create/update/destroy) without touching anything; apply performs it (showing the plan again first by default). Nothing is destroyed unless the plan says so.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud Shell</span>
+    <p class="qtext">Which is a limitation of Cloud Shell you should plan around?</p>
+    <ul class="opts">
+      <li class="correct">Sessions time out with inactivity and the VM is recycled, so long-running jobs shouldn&#39;t run there<span class="tag">Correct</span></li>
+      <li>It cannot run gcloud commands that create or modify resources — only read-only operations</li>
+      <li>It bills the project per minute of terminal activity, so idle sessions accumulate charges</li>
+      <li>It has no outbound internet access, so installing packages or calling external APIs fails</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud Shell is for interactive admin work: sessions end after inactivity (about 20 minutes) and there are weekly usage limits, so long jobs belong on a VM, Cloud Run job, or build service. It is free, has the SDK preinstalled, and has outbound internet access.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">IaC</span>
+    <p class="qtext">You are pitching IaC to a team at your company that manages everything by console clicking. Why is IaC preferred for production? (Choose two.)</p>
+    <ul class="opts">
+      <li class="correct">Changes are reviewable/versioned and environments are reproducible<span class="tag">Correct</span></li>
+      <li class="correct">Drift is detectable and deployments are repeatable across projects<span class="tag">Correct</span></li>
+      <li>It makes resources run faster</li>
+      <li>It removes the need for IAM</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> IaC buys review, history, reproducibility, and drift detection — governance benefits. It has zero effect on runtime performance and complements (never replaces) IAM.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this for real</h3>
+    <p>The app has dozens more questions on this and every other topic, with instant scoring,
+    spaced repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=1#view-home">Start practicing →</a>
+  </div>
+
+  <h2>This topic shows up in</h2>
+  <div class="domain-grid">
+    <a href="../../domains/setting-up-a-cloud-solution-environment/"><strong>Domain 1</strong>Setting Up a Cloud Solution Environment</a>
+      <a href="../../domains/deploying-and-implementing-a-cloud-solution/"><strong>Domain 3</strong>Deploying &amp; Implementing a Cloud Solution</a>
+  </div>
+
+  <h2>Other topics</h2>
+  <div class="domain-grid">
+    <a href="../iam-roles-and-permissions/"><strong>Topic</strong>IAM Roles &amp; Permissions</a>
+      <a href="../service-accounts-and-identity/"><strong>Topic</strong>Service Accounts &amp; Identity</a>
+      <a href="../billing-pricing-and-cost-management/"><strong>Topic</strong>Billing, Pricing &amp; Cost Management</a>
+      <a href="../google-kubernetes-engine-gke/"><strong>Topic</strong>Google Kubernetes Engine (GKE)</a>
+      <a href="../gcloud-cli-commands/"><strong>Topic</strong>gcloud CLI Commands</a>
+      <a href="../choosing-the-right-compute-option/"><strong>Topic</strong>Choosing the Right Compute Option</a>
+      <a href="../compute-engine-deployment-and-operations/"><strong>Topic</strong>Compute Engine Deployment &amp; Operations</a>
+      <a href="../cloud-monitoring-logging-and-audit-logs/"><strong>Topic</strong>Cloud Monitoring, Logging &amp; Audit Logs</a>
+      <a href="../vpc-networking-and-load-balancing/"><strong>Topic</strong>VPC Networking &amp; Load Balancing</a>
+      <a href="../choosing-a-database/"><strong>Topic</strong>Choosing a Database on Google Cloud</a>
+      <a href="../resource-hierarchy-projects-and-apis/"><strong>Topic</strong>Resource Hierarchy, Projects &amp; APIs</a>
+      <a href="../cloud-storage-classes-access-and-security/"><strong>Topic</strong>Cloud Storage: Classes, Access &amp; Security</a>
+      <a href="../serverless-compute-cloud-run-and-app-engine/"><strong>Topic</strong>Serverless Compute: Cloud Run &amp; App Engine</a>
+      <a href="../data-protection-encryption-and-secret-manager/"><strong>Topic</strong>Data Protection: Encryption &amp; Secret Manager</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="../../analytics-config.js"></script>
+<script defer src="../../analytics.js"></script>
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Billing, Pricing &amp; Cost Management — GCP ACE Exam Guide</title>
+<meta name="description" content="GCP billing, pricing, and quotas for the ACE exam: budgets vs budget caps, committed vs sustained use discounts, and billing export to BigQuery — plus free sample questions.">
+<link rel="canonical" href="https://cloudaceprep.com/topics/billing-pricing-and-cost-management/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Billing, Pricing &amp; Cost Management — GCP ACE Exam Guide">
+<meta property="og:description" content="GCP billing, pricing, and quotas for the ACE exam: budgets vs budget caps, committed vs sustained use discounts, and billing export to BigQuery — plus free sample questions.">
+<meta property="og:url" content="https://cloudaceprep.com/topics/billing-pricing-and-cost-management/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Billing, Pricing &amp; Cost Management — GCP ACE Exam Guide">
+<meta name="twitter:description" content="GCP billing, pricing, and quotas for the ACE exam: budgets vs budget caps, committed vs sustained use discounts, and billing export to BigQuery — plus free sample questions.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Topics","item":"https://cloudaceprep.com/topics/"},{"@type":"ListItem","position":4,"name":"Billing, Pricing & Cost Management","item":"https://cloudaceprep.com/topics/billing-pricing-and-cost-management/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE: Billing, Pricing & Cost Management — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Billing, Pricing & Cost Management"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"A project's resources keep running but you want a different department to pay for them. What should you do?","acceptedAnswer":{"@type":"Answer","text":"Link the project to the other department's billing account — A project is linked to exactly one billing account at a time, and changing that link (requires Project Billing Manager on the project plus Billing Account User on the target account, or Billing Account Administrator) redirects all future charges without touching any resources. Migrating resources or reorganizing the hierarchy is unnecessary, and budgets only monitor spend — they don't change who pays."}},{"@type":"Question","name":"Which pricing tool answers 'what will this architecture cost per month' during design?","acceptedAnswer":{"@type":"Answer","text":"Google Cloud Pricing Calculator — The Pricing Calculator models planned usage (VMs, disks, storage, egress...) into a monthly estimate you can share. Billing export analyzes actual past spend; quotas and Trace are unrelated to cost estimation."}},{"@type":"Question","name":"Your team hit the CPU quota in a region and cannot create more VMs. What should you do?","acceptedAnswer":{"@type":"Answer","text":"Request a quota increase from the Quotas page in IAM & Admin (or via gcloud) — Quotas are per-project (often per-region) limits that you can view and request increases for on the Quotas page; increases are reviewed by Google. Billing accounts and API enablement don't change quota, and Spot/preemptible VMs consume the same CPU quota family (a separate preemptible quota can exist, but it doesn't 'bypass' limits)."}},{"@type":"Question","name":"You want to be notified when a project's monthly spend reaches 50%, 90%, and 100% of $1,000. What should you configure?","acceptedAnswer":{"@type":"Answer","text":"A budget on the billing account with threshold alert rules at 50%, 90%, and 100% — Budgets are set on a billing account (scoped to one or more projects) with percentage thresholds that trigger email notifications, and optionally Pub/Sub messages for programmatic action. Quotas limit API/resource usage, not dollar amounts; billing export enables analysis but has no built-in alerting; uptime checks monitor endpoints."}},{"@type":"Question","name":"Your steady-state web tier will run 24/7 for years on N2 VMs. Beyond sustained use discounts, what should you evaluate to cut compute cost?","acceptedAnswer":{"@type":"Answer","text":"Committed use discounts (1- or 3-year commitments) — Predictable, always-on usage is the CUD sweet spot — commitments yield larger discounts than SUD. Spot is inappropriate for availability-sensitive serving; network tier and labels don't reduce compute spend."}},{"@type":"Question","name":"What is the difference between rate quotas and allocation quotas?","acceptedAnswer":{"@type":"Answer","text":"Rate quotas reset over a time window, like API requests per day; allocation quotas cap resources that exist at once, like VM count — Rate quotas limit how often you can do something and replenish over time; allocation quotas limit how much you can hold at once and free up only when resources are deleted. Understanding which one you hit determines whether waiting or deleting/requesting an increase is the fix."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / <a href="../../topics/">Topics</a> / Billing, Pricing &amp; Cost Management</p>
+  <h1>Billing, Pricing &amp; Cost Management</h1>
+  <p class="lede">What actually gets tested on the Google Cloud Associate Cloud Engineer exam,
+  the traps to know, and 6 free sample questions with full explanations.</p>
+
+  <p>A project links to exactly <strong>one billing account</strong> at a time, and changing that link needs both Project Billing Manager on the project and Billing Account User on the account — a two-sided permission the exam likes to test directly. One billing account can fund many projects, which is the normal setup for an organization: central finance owns billing, individual teams own their projects.</p>
+  <p>The single most-repeated trap in this topic is that a <strong>budget alert doesn't cap spending</strong>. Budgets are set on a billing account with percentage thresholds that trigger email notifications to billing admins/users, and optionally a Pub/Sub message you could wire up to automate a response yourself — but nothing about a budget alert, by itself, stops a service from running or a bill from growing. If a question wants spend actually capped, the answer involves quotas, a programmed response to the Pub/Sub notification, or simply not provisioning more than intended in the first place.</p>
+  <p>On discounts, keep <strong>sustained use</strong> and <strong>committed use</strong> straight: sustained use discounts apply automatically to steady month-long Compute Engine usage with no commitment required, while committed use discounts need a 1- or 3-year up-front commitment in exchange for a deeper discount. For visibility into what's actually being spent, Billing export to BigQuery writes detailed line-item usage and cost data (including labels) somewhere finance can run SQL against it or connect a BI tool like Looker Studio.</p>
+
+  <div class="card">
+    <h3>Exam tips for this topic</h3>
+    <ul>
+      <li>A budget alert is a notification, not a spending cap — nothing about it stops a service or reduces the bill by itself.</li>
+      <li>Sustained use discounts are automatic for steady month-long usage; committed use discounts require a 1- or 3-year up-front commitment for a deeper rate. Don&#39;t swap these.</li>
+      <li>Moving a project to a different billing account needs Billing Account User on the account AND Project Billing Manager on the project — one alone isn&#39;t enough.</li>
+    </ul>
+  </div>
+
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
+  <h2>Sample questions — Billing, Pricing &amp; Cost Management</h2>
+  <p>These 6 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">Billing</span>
+    <p class="qtext">A project&#39;s resources keep running but you want a different department to pay for them. What should you do?</p>
+    <ul class="opts">
+      <li class="correct">Link the project to the other department&#39;s billing account<span class="tag">Correct</span></li>
+      <li>Export the project&#39;s resources to a new project owned by the other department</li>
+      <li>Create a new billing budget in the other department&#39;s name</li>
+      <li>Transfer the organization node to the other department</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> A project is linked to exactly one billing account at a time, and changing that link (requires Project Billing Manager on the project plus Billing Account User on the target account, or Billing Account Administrator) redirects all future charges without touching any resources. Migrating resources or reorganizing the hierarchy is unnecessary, and budgets only monitor spend — they don&#39;t change who pays.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Pricing</span>
+    <p class="qtext">Which pricing tool answers &#39;what will this architecture cost per month&#39; during design?</p>
+    <ul class="opts">
+      <li class="correct">Google Cloud Pricing Calculator<span class="tag">Correct</span></li>
+      <li>The billing export dataset in BigQuery</li>
+      <li>The Quotas page under IAM &amp; Admin</li>
+      <li>Cloud Trace&#39;s cost breakdown view</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> The Pricing Calculator models planned usage (VMs, disks, storage, egress...) into a monthly estimate you can share. Billing export analyzes actual past spend; quotas and Trace are unrelated to cost estimation.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Quotas</span>
+    <p class="qtext">Your team hit the CPU quota in a region and cannot create more VMs. What should you do?</p>
+    <ul class="opts">
+      <li class="correct">Request a quota increase from the Quotas page in IAM &amp; Admin (or via gcloud)<span class="tag">Correct</span></li>
+      <li>Create a new billing account and link the project to it to reset the regional limits</li>
+      <li>Disable and re-enable the Compute Engine API to refresh the project&#39;s quota allocation</li>
+      <li>Switch the new VMs to preemptible instances, which are exempt from CPU quota</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Quotas are per-project (often per-region) limits that you can view and request increases for on the Quotas page; increases are reviewed by Google. Billing accounts and API enablement don&#39;t change quota, and Spot/preemptible VMs consume the same CPU quota family (a separate preemptible quota can exist, but it doesn&#39;t &#39;bypass&#39; limits).</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Billing</span>
+    <p class="qtext">You want to be notified when a project&#39;s monthly spend reaches 50%, 90%, and 100% of $1,000. What should you configure?</p>
+    <ul class="opts">
+      <li class="correct">A budget on the billing account with threshold alert rules at 50%, 90%, and 100%<span class="tag">Correct</span></li>
+      <li>A billing export to BigQuery with a scheduled query that emails the finance team daily</li>
+      <li>A quota limit of $1,000 configured on each of the project&#39;s billable services</li>
+      <li>A Cloud Monitoring alerting policy with an uptime check on the billing account</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Budgets are set on a billing account (scoped to one or more projects) with percentage thresholds that trigger email notifications, and optionally Pub/Sub messages for programmatic action. Quotas limit API/resource usage, not dollar amounts; billing export enables analysis but has no built-in alerting; uptime checks monitor endpoints.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Pricing</span>
+    <p class="qtext">Your steady-state web tier will run 24/7 for years on N2 VMs. Beyond sustained use discounts, what should you evaluate to cut compute cost?</p>
+    <ul class="opts">
+      <li class="correct">Committed use discounts (1- or 3-year commitments)<span class="tag">Correct</span></li>
+      <li>Moving the customer-facing web tier onto Spot VMs</li>
+      <li>Switching the VMs to the Premium network tier</li>
+      <li>Adding more cost-allocation labels to the VMs</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Predictable, always-on usage is the CUD sweet spot — commitments yield larger discounts than SUD. Spot is inappropriate for availability-sensitive serving; network tier and labels don&#39;t reduce compute spend.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Quotas</span>
+    <p class="qtext">What is the difference between rate quotas and allocation quotas?</p>
+    <ul class="opts">
+      <li class="correct">Rate quotas reset over a time window, like API requests per day; allocation quotas cap resources that exist at once, like VM count<span class="tag">Correct</span></li>
+      <li>Rate quotas apply only to billing spend, while allocation quotas govern API request volume and reset monthly</li>
+      <li>Allocation quotas reset automatically every hour, while rate quotas never reset and require a support case to raise</li>
+      <li>They are two names for the same mechanism; the console simply shows them on two different pages</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Rate quotas limit how often you can do something and replenish over time; allocation quotas limit how much you can hold at once and free up only when resources are deleted. Understanding which one you hit determines whether waiting or deleting/requesting an increase is the fix.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this for real</h3>
+    <p>The app has dozens more questions on this and every other topic, with instant scoring,
+    spaced repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=1#view-home">Start practicing →</a>
+  </div>
+
+  <h2>This topic shows up in</h2>
+  <div class="domain-grid">
+    <a href="../../domains/setting-up-a-cloud-solution-environment/"><strong>Domain 1</strong>Setting Up a Cloud Solution Environment</a>
+      <a href="../../domains/ensuring-successful-operation/"><strong>Domain 4</strong>Ensuring Successful Operation</a>
+  </div>
+
+  <h2>Other topics</h2>
+  <div class="domain-grid">
+    <a href="../iam-roles-and-permissions/"><strong>Topic</strong>IAM Roles &amp; Permissions</a>
+      <a href="../service-accounts-and-identity/"><strong>Topic</strong>Service Accounts &amp; Identity</a>
+      <a href="../google-kubernetes-engine-gke/"><strong>Topic</strong>Google Kubernetes Engine (GKE)</a>
+      <a href="../gcloud-cli-commands/"><strong>Topic</strong>gcloud CLI Commands</a>
+      <a href="../choosing-the-right-compute-option/"><strong>Topic</strong>Choosing the Right Compute Option</a>
+      <a href="../compute-engine-deployment-and-operations/"><strong>Topic</strong>Compute Engine Deployment &amp; Operations</a>
+      <a href="../cloud-monitoring-logging-and-audit-logs/"><strong>Topic</strong>Cloud Monitoring, Logging &amp; Audit Logs</a>
+      <a href="../vpc-networking-and-load-balancing/"><strong>Topic</strong>VPC Networking &amp; Load Balancing</a>
+      <a href="../choosing-a-database/"><strong>Topic</strong>Choosing a Database on Google Cloud</a>
+      <a href="../resource-hierarchy-projects-and-apis/"><strong>Topic</strong>Resource Hierarchy, Projects &amp; APIs</a>
+      <a href="../cloud-storage-classes-access-and-security/"><strong>Topic</strong>Cloud Storage: Classes, Access &amp; Security</a>
+      <a href="../serverless-compute-cloud-run-and-app-engine/"><strong>Topic</strong>Serverless Compute: Cloud Run &amp; App Engine</a>
+      <a href="../data-protection-encryption-and-secret-manager/"><strong>Topic</strong>Data Protection: Encryption &amp; Secret Manager</a>
+      <a href="../infrastructure-as-code-and-cloud-shell/"><strong>Topic</strong>Infrastructure as Code &amp; Cloud Shell</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="../../analytics-config.js"></script>
+<script defer src="../../analytics.js"></script>
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
+</body>
+</html>

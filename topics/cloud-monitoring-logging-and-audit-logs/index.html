@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cloud Monitoring, Logging &amp; Audit Logs — GCP ACE Exam Guide</title>
+<meta name="description" content="Cloud Monitoring, Cloud Logging, and audit logs for the GCP ACE exam: alerting policies, log sinks, and the admin-vs-data-access log distinction — free sample questions.">
+<link rel="canonical" href="https://cloudaceprep.com/topics/cloud-monitoring-logging-and-audit-logs/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Cloud Monitoring, Logging &amp; Audit Logs — GCP ACE Exam Guide">
+<meta property="og:description" content="Cloud Monitoring, Cloud Logging, and audit logs for the GCP ACE exam: alerting policies, log sinks, and the admin-vs-data-access log distinction — free sample questions.">
+<meta property="og:url" content="https://cloudaceprep.com/topics/cloud-monitoring-logging-and-audit-logs/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cloud Monitoring, Logging &amp; Audit Logs — GCP ACE Exam Guide">
+<meta name="twitter:description" content="Cloud Monitoring, Cloud Logging, and audit logs for the GCP ACE exam: alerting policies, log sinks, and the admin-vs-data-access log distinction — free sample questions.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Topics","item":"https://cloudaceprep.com/topics/"},{"@type":"ListItem","position":4,"name":"Cloud Monitoring, Logging & Audit Logs","item":"https://cloudaceprep.com/topics/cloud-monitoring-logging-and-audit-logs/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE: Cloud Monitoring, Logging & Audit Logs — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Cloud Monitoring, Logging & Audit Logs"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"Which audit log type is ALWAYS on and cannot be disabled?","acceptedAnswer":{"@type":"Answer","text":"Admin Activity audit logs — Admin Activity (and System Event) audit logs are always written, free, and undisable-able. Data Access logs are mostly opt-in (BigQuery being a notable always-on exception), and flow/agent logs are features you enable."}},{"@type":"Question","name":"Which query interface finds all ERROR-severity logs from one Cloud Run service in the last hour?","acceptedAnswer":{"@type":"Answer","text":"Logs Explorer with a filter like resource.type=cloud_run_revision AND severity>=ERROR and a 1h time range — Logs Explorer's query language filters by resource, severity, labels, text, and time. Container filesystems are ephemeral and not centralized."}},{"@type":"Question","name":"You must be paged when the checkout API's error rate exceeds 2% for 5 minutes. Which Cloud Monitoring construct?","acceptedAnswer":{"@type":"Answer","text":"An alerting policy on the error-rate metric with a 5-minute duration and a notification channel (e.g., PagerDuty/SMS) — Alerting policies evaluate metric conditions over durations and fire to notification channels. Dashboards visualize but don't page; sinks archive logs; budgets watch spend."}},{"@type":"Question","name":"Security asks 'who read objects in this sensitive bucket last week?' What must have been enabled BEFOREHAND for the answer to exist?","acceptedAnswer":{"@type":"Answer","text":"Data Access audit logs for Cloud Storage — Object reads are data access, logged only if Data Access audit logging was enabled for the service (with volume/cost implications). Admin Activity covers configuration changes, not reads."}},{"@type":"Question","name":"Compliance requires keeping ALL audit logs for 7 years cheaply. Default retention won't do. What do you configure?","acceptedAnswer":{"@type":"Answer","text":"A log sink exporting to a Cloud Storage bucket (e.g., Coldline/Archive class) or a locked log bucket with 7-year retention — Sinks route logs at ingestion to GCS/BigQuery/Pub/Sub or other log buckets; long retention lives there (Logging's default buckets keep most logs ~30 days, admin audit 400 days). Exporting to Archive-class storage is the classic cheap 7-year answer."}},{"@type":"Question","name":"Default Compute Engine metrics WITHOUT any agent include CPU and network — but which common metrics require installing the Ops Agent?","acceptedAnswer":{"@type":"Answer","text":"Memory utilization and disk space usage inside the guest OS — The hypervisor can't see inside the guest: memory %, disk %, swap, and application metrics need the Ops Agent. CPU/network are visible externally and always available."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / <a href="../../topics/">Topics</a> / Cloud Monitoring, Logging &amp; Audit Logs</p>
+  <h1>Cloud Monitoring, Logging &amp; Audit Logs</h1>
+  <p class="lede">What actually gets tested on the Google Cloud Associate Cloud Engineer exam,
+  the traps to know, and 6 free sample questions with full explanations.</p>
+
+  <p>An <strong>alerting policy</strong> evaluates a metric condition over a duration and fires to a notification channel — but it only reaches a human if a channel (email, SMS, Pub/Sub) is actually attached. Dashboards visualize metrics but don't page anyone; log sinks archive logs but don't alert; budgets are a completely separate system. A frequent exam trap: an alerting policy exists and looks correctly configured, but there's no notification channel attached, so it fires silently and nobody finds out.</p>
+  <p>On what's actually visible: the hypervisor can see CPU and network externally without any extra setup, but it can't see inside the guest — memory percentage, disk usage, swap, and application-level metrics all require installing the <strong>Ops Agent</strong> on the instance. This is a recurring "why don't I see this metric" scenario. For events that aren't a built-in metric at all, a <strong>log-based metric</strong> turns a pattern in your logs into something you can alert on the same way.</p>
+  <p>Logs Explorer's query language filters by resource, severity, label, text, and time — a container's own filesystem is ephemeral and not a substitute for centralized logging. Log <strong>sinks</strong> route logs at ingestion time to GCS/BigQuery/Pub/Sub or another log bucket for long-term retention (Logging's own default buckets keep most logs for roughly 30 days). For <strong>audit logs</strong> specifically: Admin Activity logs are always on and cannot be disabled; Data Access logs (except for BigQuery, which is always on) are off by default and have to be enabled deliberately — a distinction the exam tests directly.</p>
+
+  <div class="card">
+    <h3>Exam tips for this topic</h3>
+    <ul>
+      <li>An alerting policy without an attached notification channel fires silently — always check that a channel (email, SMS, Pub/Sub) actually exists on the policy.</li>
+      <li>CPU and network are visible without extra setup; memory, disk, swap, and app-level metrics need the Ops Agent installed on the instance.</li>
+      <li>Admin Activity audit logs are always on and can&#39;t be turned off; Data Access audit logs (except BigQuery) are off by default and must be enabled deliberately.</li>
+    </ul>
+  </div>
+
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
+  <h2>Sample questions — Cloud Monitoring, Logging &amp; Audit Logs</h2>
+  <p>These 6 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">Audit logs</span>
+    <p class="qtext">Which audit log type is ALWAYS on and cannot be disabled?</p>
+    <ul class="opts">
+      <li class="correct">Admin Activity audit logs<span class="tag">Correct</span></li>
+      <li>Data Access audit logs for all services</li>
+      <li>VPC Flow Logs</li>
+      <li>Ops Agent logs</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Admin Activity (and System Event) audit logs are always written, free, and undisable-able. Data Access logs are mostly opt-in (BigQuery being a notable always-on exception), and flow/agent logs are features you enable.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Logging</span>
+    <p class="qtext">Which query interface finds all ERROR-severity logs from one Cloud Run service in the last hour?</p>
+    <ul class="opts">
+      <li class="correct">Logs Explorer with a filter like resource.type=cloud_run_revision AND severity&gt;=ERROR and a 1h time range<span class="tag">Correct</span></li>
+      <li>grep on the container filesystem</li>
+      <li>The billing console</li>
+      <li>Cloud DNS logs</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Logs Explorer&#39;s query language filters by resource, severity, labels, text, and time. Container filesystems are ephemeral and not centralized.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Monitoring</span>
+    <p class="qtext">You must be paged when the checkout API&#39;s error rate exceeds 2% for 5 minutes. Which Cloud Monitoring construct?</p>
+    <ul class="opts">
+      <li class="correct">An alerting policy on the error-rate metric with a 5-minute duration and a notification channel (e.g., PagerDuty/SMS)<span class="tag">Correct</span></li>
+      <li>A dashboard you watch continuously</li>
+      <li>A log sink to BigQuery</li>
+      <li>A budget alert</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Alerting policies evaluate metric conditions over durations and fire to notification channels. Dashboards visualize but don&#39;t page; sinks archive logs; budgets watch spend.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Audit logs</span>
+    <p class="qtext">Security asks &#39;who read objects in this sensitive bucket last week?&#39; What must have been enabled BEFOREHAND for the answer to exist?</p>
+    <ul class="opts">
+      <li class="correct">Data Access audit logs for Cloud Storage<span class="tag">Correct</span></li>
+      <li>Admin Activity logs</li>
+      <li>Uptime checks</li>
+      <li>Bucket versioning</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Object reads are data access, logged only if Data Access audit logging was enabled for the service (with volume/cost implications). Admin Activity covers configuration changes, not reads.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Logging</span>
+    <p class="qtext">Compliance requires keeping ALL audit logs for 7 years cheaply. Default retention won&#39;t do. What do you configure?</p>
+    <ul class="opts">
+      <li class="correct">A log sink exporting to a Cloud Storage bucket (e.g., Coldline/Archive class) or a locked log bucket with 7-year retention<span class="tag">Correct</span></li>
+      <li>Nothing; logs keep forever by default</li>
+      <li>Print logs monthly</li>
+      <li>A bigger VM for the logs</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Sinks route logs at ingestion to GCS/BigQuery/Pub/Sub or other log buckets; long retention lives there (Logging&#39;s default buckets keep most logs ~30 days, admin audit 400 days). Exporting to Archive-class storage is the classic cheap 7-year answer.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Monitoring</span>
+    <p class="qtext">Default Compute Engine metrics WITHOUT any agent include CPU and network — but which common metrics require installing the Ops Agent?</p>
+    <ul class="opts">
+      <li class="correct">Memory utilization and disk space usage inside the guest OS<span class="tag">Correct</span></li>
+      <li>CPU utilization</li>
+      <li>Network bytes</li>
+      <li>Uptime of the hypervisor</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> The hypervisor can&#39;t see inside the guest: memory %, disk %, swap, and application metrics need the Ops Agent. CPU/network are visible externally and always available.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this for real</h3>
+    <p>The app has dozens more questions on this and every other topic, with instant scoring,
+    spaced repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=4#view-home">Start practicing →</a>
+  </div>
+
+  <h2>This topic shows up in</h2>
+  <div class="domain-grid">
+    <a href="../../domains/ensuring-successful-operation/"><strong>Domain 4</strong>Ensuring Successful Operation</a>
+      <a href="../../domains/configuring-access-and-security/"><strong>Domain 5</strong>Configuring Access and Security</a>
+  </div>
+
+  <h2>Other topics</h2>
+  <div class="domain-grid">
+    <a href="../iam-roles-and-permissions/"><strong>Topic</strong>IAM Roles &amp; Permissions</a>
+      <a href="../service-accounts-and-identity/"><strong>Topic</strong>Service Accounts &amp; Identity</a>
+      <a href="../billing-pricing-and-cost-management/"><strong>Topic</strong>Billing, Pricing &amp; Cost Management</a>
+      <a href="../google-kubernetes-engine-gke/"><strong>Topic</strong>Google Kubernetes Engine (GKE)</a>
+      <a href="../gcloud-cli-commands/"><strong>Topic</strong>gcloud CLI Commands</a>
+      <a href="../choosing-the-right-compute-option/"><strong>Topic</strong>Choosing the Right Compute Option</a>
+      <a href="../compute-engine-deployment-and-operations/"><strong>Topic</strong>Compute Engine Deployment &amp; Operations</a>
+      <a href="../vpc-networking-and-load-balancing/"><strong>Topic</strong>VPC Networking &amp; Load Balancing</a>
+      <a href="../choosing-a-database/"><strong>Topic</strong>Choosing a Database on Google Cloud</a>
+      <a href="../resource-hierarchy-projects-and-apis/"><strong>Topic</strong>Resource Hierarchy, Projects &amp; APIs</a>
+      <a href="../cloud-storage-classes-access-and-security/"><strong>Topic</strong>Cloud Storage: Classes, Access &amp; Security</a>
+      <a href="../serverless-compute-cloud-run-and-app-engine/"><strong>Topic</strong>Serverless Compute: Cloud Run &amp; App Engine</a>
+      <a href="../data-protection-encryption-and-secret-manager/"><strong>Topic</strong>Data Protection: Encryption &amp; Secret Manager</a>
+      <a href="../infrastructure-as-code-and-cloud-shell/"><strong>Topic</strong>Infrastructure as Code &amp; Cloud Shell</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="../../analytics-config.js"></script>
+<script defer src="../../analytics.js"></script>
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
+</body>
+</html>

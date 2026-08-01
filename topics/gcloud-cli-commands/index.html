@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gcloud CLI Commands — GCP ACE Exam Guide</title>
+<meta name="description" content="The gcloud CLI commands most tested on the GCP ACE exam: config, auth, impersonation, and the difference between gcloud, Cloud Shell, and the Console — free sample questions.">
+<link rel="canonical" href="https://cloudaceprep.com/topics/gcloud-cli-commands/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="gcloud CLI Commands — GCP ACE Exam Guide">
+<meta property="og:description" content="The gcloud CLI commands most tested on the GCP ACE exam: config, auth, impersonation, and the difference between gcloud, Cloud Shell, and the Console — free sample questions.">
+<meta property="og:url" content="https://cloudaceprep.com/topics/gcloud-cli-commands/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="gcloud CLI Commands — GCP ACE Exam Guide">
+<meta name="twitter:description" content="The gcloud CLI commands most tested on the GCP ACE exam: config, auth, impersonation, and the difference between gcloud, Cloud Shell, and the Console — free sample questions.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Topics","item":"https://cloudaceprep.com/topics/"},{"@type":"ListItem","position":4,"name":"gcloud CLI Commands","item":"https://cloudaceprep.com/topics/gcloud-cli-commands/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE: gcloud CLI Commands — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — gcloud CLI Commands"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"Which command shows the account, project, and other properties of your active gcloud configuration?","acceptedAnswer":{"@type":"Answer","text":"gcloud config list — gcloud config list prints the active configuration's properties (account, project, region/zone). auth login authenticates, projects describe shows metadata of a project (not your CLI config), and configurations create makes a new profile."}},{"@type":"Question","name":"You need to run gcloud commands as a service account from your workstation for a script. Which approach is recommended TODAY over downloading a JSON key?","acceptedAnswer":{"@type":"Answer","text":"Use service account impersonation with gcloud --impersonate-service-account after granting yourself Token Creator — Impersonation issues short-lived credentials and requires the roles/iam.serviceAccountTokenCreator grant, avoiding long-lived key files that can leak. Downloaded JSON keys are discouraged and often blocked by org policy; service accounts have no passwords, and groups don't confer identity."}},{"@type":"Question","name":"Which command authenticates your user account in the gcloud CLI on a new machine?","acceptedAnswer":{"@type":"Answer","text":"gcloud auth login — gcloud auth login opens a browser flow to authenticate your Google identity (gcloud auth application-default login is the related command for Application Default Credentials used by client libraries). The other commands are not valid."}},{"@type":"Question","name":"You want to see all projects your account can access. Which command do you run?","acceptedAnswer":{"@type":"Answer","text":"gcloud projects list — gcloud projects list enumerates projects on which you hold at least resourcemanager.projects.get. gcloud config list shows CLI settings, and the others aren't valid commands."}},{"@type":"Question","name":"Your script must run gcloud non-interactively in CI and answer 'yes' to prompts automatically. Which flag helps?","acceptedAnswer":{"@type":"Answer","text":"--quiet (or -q) to disable prompts and accept defaults — --quiet suppresses interactive prompts, using default answers (aborting when there is no safe default) — standard for automation. The other flags don't exist globally in gcloud."}},{"@type":"Question","name":"What does gcloud auth application-default login configure?","acceptedAnswer":{"@type":"Answer","text":"Application Default Credentials used by client libraries and tools like Terraform running locally — ADC is the credential chain client libraries look up; the application-default login command stores user credentials for local development so code and Terraform can authenticate. gcloud auth login (without application-default) is what authenticates the CLI itself — the two are separate credential stores."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / <a href="../../topics/">Topics</a> / gcloud CLI Commands</p>
+  <h1>gcloud CLI Commands</h1>
+  <p class="lede">What actually gets tested on the Google Cloud Associate Cloud Engineer exam,
+  the traps to know, and 6 free sample questions with full explanations.</p>
+
+  <p>The ACE exam expects you to recognize what a <code>gcloud</code> command does when you see it, not memorize every flag. <code>gcloud config list</code> prints the active configuration's properties — account, project, default region/zone — which is different from <code>gcloud projects list</code> (enumerates every project you can at least <code>resourcemanager.projects.get</code> on) and different again from <code>gcloud projects describe</code> (metadata for one specific project). Mixing these three up is one of the exam's most common wrong-answer patterns.</p>
+  <p>On authentication, <code>gcloud auth login</code> opens a browser flow to authenticate your own Google identity for interactive CLI use; the related but distinct <code>gcloud auth application-default login</code> sets up Application Default Credentials for code and client libraries running on your machine — the exam expects you to know these are two different credential stores serving two different purposes, not the same command twice.</p>
+  <p>For workloads that shouldn't use a downloaded key, <strong>impersonation</strong> (<code>gcloud config set auth/impersonate_service_account</code> or the <code>--impersonate-service-account</code> flag, backed by <code>roles/iam.serviceAccountTokenCreator</code>) issues short-lived credentials on demand instead of a long-lived file that can leak. Beyond the CLI itself, know when each tool is the right one: the <strong>Console</strong> for one-off exploratory changes, <strong>Cloud Shell</strong> for a preconfigured browser shell with the SDK and common tools already installed, and a local <code>gcloud</code> install (or Terraform on top of it) for anything repeatable.</p>
+
+  <div class="card">
+    <h3>Exam tips for this topic</h3>
+    <ul>
+      <li>gcloud config list shows CLI settings (account, project, region/zone); gcloud projects list enumerates projects you can access — don&#39;t confuse the two.</li>
+      <li>gcloud auth login authenticates you for interactive CLI use; gcloud auth application-default login sets up ADC for code/client libraries — two separate credential stores.</li>
+      <li>Impersonation via roles/iam.serviceAccountTokenCreator issues short-lived credentials with no key file to leak — recognize it as the safer alternative whenever a scenario mentions automation or a workload.</li>
+    </ul>
+  </div>
+
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
+  <h2>Sample questions — gcloud CLI Commands</h2>
+  <p>These 6 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">gcloud</span>
+    <p class="qtext">Which command shows the account, project, and other properties of your active gcloud configuration?</p>
+    <ul class="opts">
+      <li class="correct">gcloud config list<span class="tag">Correct</span></li>
+      <li>gcloud auth login</li>
+      <li>gcloud projects describe</li>
+      <li>gcloud config configurations create</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> gcloud config list prints the active configuration&#39;s properties (account, project, region/zone). auth login authenticates, projects describe shows metadata of a project (not your CLI config), and configurations create makes a new profile.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">gcloud</span>
+    <p class="qtext">You need to run gcloud commands as a service account from your workstation for a script. Which approach is recommended TODAY over downloading a JSON key?</p>
+    <ul class="opts">
+      <li class="correct">Use service account impersonation with gcloud --impersonate-service-account after granting yourself Token Creator<span class="tag">Correct</span></li>
+      <li>Download the service account&#39;s JSON key file and activate it with gcloud auth activate-service-account</li>
+      <li>Store the service account&#39;s password in Secret Manager and have the script log in with it</li>
+      <li>Add your user account as a member of the service account&#39;s group so you inherit its identity</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Impersonation issues short-lived credentials and requires the roles/iam.serviceAccountTokenCreator grant, avoiding long-lived key files that can leak. Downloaded JSON keys are discouraged and often blocked by org policy; service accounts have no passwords, and groups don&#39;t confer identity.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">gcloud</span>
+    <p class="qtext">Which command authenticates your user account in the gcloud CLI on a new machine?</p>
+    <ul class="opts">
+      <li class="correct">gcloud auth login<span class="tag">Correct</span></li>
+      <li>gcloud iam login</li>
+      <li>gcloud users authenticate</li>
+      <li>gcloud config set auth</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> gcloud auth login opens a browser flow to authenticate your Google identity (gcloud auth application-default login is the related command for Application Default Credentials used by client libraries). The other commands are not valid.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">gcloud</span>
+    <p class="qtext">You want to see all projects your account can access. Which command do you run?</p>
+    <ul class="opts">
+      <li class="correct">gcloud projects list<span class="tag">Correct</span></li>
+      <li>gcloud config list projects</li>
+      <li>gcloud org list</li>
+      <li>gcloud iam projects show</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> gcloud projects list enumerates projects on which you hold at least resourcemanager.projects.get. gcloud config list shows CLI settings, and the others aren&#39;t valid commands.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">gcloud</span>
+    <p class="qtext">Your script must run gcloud non-interactively in CI and answer &#39;yes&#39; to prompts automatically. Which flag helps?</p>
+    <ul class="opts">
+      <li class="correct">--quiet (or -q) to disable prompts and accept defaults<span class="tag">Correct</span></li>
+      <li>--force, which overrides confirmation prompts on every command</li>
+      <li>--assume-yes, which answers yes to all interactive questions</li>
+      <li>--batch, which runs the command in non-interactive batch mode</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> --quiet suppresses interactive prompts, using default answers (aborting when there is no safe default) — standard for automation. The other flags don&#39;t exist globally in gcloud.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">gcloud</span>
+    <p class="qtext">What does gcloud auth application-default login configure?</p>
+    <ul class="opts">
+      <li class="correct">Application Default Credentials used by client libraries and tools like Terraform running locally<span class="tag">Correct</span></li>
+      <li>The account and default project that the gcloud CLI itself uses for every subsequent command</li>
+      <li>Service account keys stored on a VM&#39;s metadata server for local applications to read</li>
+      <li>Two-factor authentication requirements for the developer&#39;s Google account</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> ADC is the credential chain client libraries look up; the application-default login command stores user credentials for local development so code and Terraform can authenticate. gcloud auth login (without application-default) is what authenticates the CLI itself — the two are separate credential stores.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this for real</h3>
+    <p>The app has dozens more questions on this and every other topic, with instant scoring,
+    spaced repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=1#view-home">Start practicing →</a>
+  </div>
+
+  <h2>This topic shows up in</h2>
+  <div class="domain-grid">
+    <a href="../../domains/setting-up-a-cloud-solution-environment/"><strong>Domain 1</strong>Setting Up a Cloud Solution Environment</a>
+      <a href="../../domains/deploying-and-implementing-a-cloud-solution/"><strong>Domain 3</strong>Deploying &amp; Implementing a Cloud Solution</a>
+  </div>
+
+  <h2>Other topics</h2>
+  <div class="domain-grid">
+    <a href="../iam-roles-and-permissions/"><strong>Topic</strong>IAM Roles &amp; Permissions</a>
+      <a href="../service-accounts-and-identity/"><strong>Topic</strong>Service Accounts &amp; Identity</a>
+      <a href="../billing-pricing-and-cost-management/"><strong>Topic</strong>Billing, Pricing &amp; Cost Management</a>
+      <a href="../google-kubernetes-engine-gke/"><strong>Topic</strong>Google Kubernetes Engine (GKE)</a>
+      <a href="../choosing-the-right-compute-option/"><strong>Topic</strong>Choosing the Right Compute Option</a>
+      <a href="../compute-engine-deployment-and-operations/"><strong>Topic</strong>Compute Engine Deployment &amp; Operations</a>
+      <a href="../cloud-monitoring-logging-and-audit-logs/"><strong>Topic</strong>Cloud Monitoring, Logging &amp; Audit Logs</a>
+      <a href="../vpc-networking-and-load-balancing/"><strong>Topic</strong>VPC Networking &amp; Load Balancing</a>
+      <a href="../choosing-a-database/"><strong>Topic</strong>Choosing a Database on Google Cloud</a>
+      <a href="../resource-hierarchy-projects-and-apis/"><strong>Topic</strong>Resource Hierarchy, Projects &amp; APIs</a>
+      <a href="../cloud-storage-classes-access-and-security/"><strong>Topic</strong>Cloud Storage: Classes, Access &amp; Security</a>
+      <a href="../serverless-compute-cloud-run-and-app-engine/"><strong>Topic</strong>Serverless Compute: Cloud Run &amp; App Engine</a>
+      <a href="../data-protection-encryption-and-secret-manager/"><strong>Topic</strong>Data Protection: Encryption &amp; Secret Manager</a>
+      <a href="../infrastructure-as-code-and-cloud-shell/"><strong>Topic</strong>Infrastructure as Code &amp; Cloud Shell</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="../../analytics-config.js"></script>
+<script defer src="../../analytics.js"></script>
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cloud Storage: Classes, Access &amp; Security — GCP ACE Exam Guide</title>
+<meta name="description" content="Cloud Storage for the GCP ACE exam: storage classes, versioning, lifecycle rules, and access control — the difference between Storage, Persistent Disk, and Filestore.">
+<link rel="canonical" href="https://cloudaceprep.com/topics/cloud-storage-classes-access-and-security/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Cloud Storage: Classes, Access &amp; Security — GCP ACE Exam Guide">
+<meta property="og:description" content="Cloud Storage for the GCP ACE exam: storage classes, versioning, lifecycle rules, and access control — the difference between Storage, Persistent Disk, and Filestore.">
+<meta property="og:url" content="https://cloudaceprep.com/topics/cloud-storage-classes-access-and-security/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cloud Storage: Classes, Access &amp; Security — GCP ACE Exam Guide">
+<meta name="twitter:description" content="Cloud Storage for the GCP ACE exam: storage classes, versioning, lifecycle rules, and access control — the difference between Storage, Persistent Disk, and Filestore.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Topics","item":"https://cloudaceprep.com/topics/"},{"@type":"ListItem","position":4,"name":"Cloud Storage: Classes, Access & Security","item":"https://cloudaceprep.com/topics/cloud-storage-classes-access-and-security/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE: Cloud Storage: Classes, Access & Security — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Cloud Storage: Classes, Access & Security"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"Your new app needs an assets bucket in region europe-west1 with uniform access control. Which command creates it?","acceptedAnswer":{"@type":"Answer","text":"gcloud storage buckets create gs://acme-app-assets --location=europe-west1 --uniform-bucket-level-access — gcloud storage buckets create (successor to gsutil mb) with uniform bucket-level access is the recommended setup — IAM-only permissions, no per-object ACLs. Bucket names are globally unique."}},{"@type":"Question","name":"Which statement correctly matches the storage product to its model?","acceptedAnswer":{"@type":"Answer","text":"Cloud Storage = objects, Persistent Disk = block, Filestore = shared file (NFS) — Objects (buckets, HTTP access) are Cloud Storage; block devices attached to VMs are Persistent Disk/Hyperdisk; NFS shares mounted by many clients are Filestore. Picking the wrong model is a common architecture error."}},{"@type":"Question","name":"You need to move all objects from bucket A to bucket B in the same project without pulling data through your own network. What is the efficient way?","acceptedAnswer":{"@type":"Answer","text":"gcloud storage mv (or Storage Transfer Service for very large buckets) server-side — Server-side copies never touch your bandwidth; STS handles massive buckets with parallelism and checksums. Buckets can't be renamed (names are global/permanent) — 'rename' is really copy+delete."}},{"@type":"Question","name":"After reading about yet another public-bucket data breach, you enable public access prevention across your org. What does it do?","acceptedAnswer":{"@type":"Answer","text":"Blocks granting allUsers/allAuthenticatedUsers, ensuring the bucket can never be made public — enforceable by org policy — PAP is the guardrail against accidental public buckets (a legendary breach class). Legitimate access via IAM continues; it targets only public principals."}},{"@type":"Question","name":"You must copy a local folder of 10,000 small files into your bucket without it taking all afternoon. What is the efficient way?","acceptedAnswer":{"@type":"Answer","text":"gcloud storage cp -r ./assets gs://bucket/ (parallelized by default; gsutil needed -m) — gcloud storage parallelizes transfers automatically (legacy gsutil required -m for parallelism). Buckets have no FTP endpoint; per-file serial copies are painfully slow."}},{"@type":"Question","name":"Several GKE pods and Compute Engine VMs must all read and write the same POSIX file share concurrently. Which service?","acceptedAnswer":{"@type":"Answer","text":"Filestore (managed NFS) — Filestore provides managed NFS that many clients mount simultaneously with POSIX semantics. A PD can be attached read-write to only one instance at a time (multi-writer is niche), and object storage isn't a POSIX filesystem."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / <a href="../../topics/">Topics</a> / Cloud Storage: Classes, Access &amp; Security</p>
+  <h1>Cloud Storage: Classes, Access &amp; Security</h1>
+  <p class="lede">What actually gets tested on the Google Cloud Associate Cloud Engineer exam,
+  the traps to know, and 6 free sample questions with full explanations.</p>
+
+  <p>First, tell the storage products apart: <strong>Cloud Storage</strong> is object storage (buckets, HTTP access) for unstructured data; <strong>Persistent Disk</strong> (or Hyperdisk) is a block device attached to a single VM, read-write, at a time; and <strong>Filestore</strong> is managed NFS that many clients can mount simultaneously with POSIX semantics. A scenario needing shared, simultaneous read-write access from multiple instances is describing Filestore, not a Persistent Disk — PD's read-write mode is single attachment only.</p>
+  <p><strong>Storage classes</strong> (Standard, Nearline, Coldline, Archive) come up constantly, and the differentiator the exam actually tests is <strong>access frequency and minimum storage duration</strong>, not just raw price — Archive is cheapest per GB but has the longest minimum storage duration and the highest retrieval cost, so it's wrong for anything accessed even occasionally. <strong>Multi-region</strong> and <strong>dual-region</strong> buckets replicate across geographically separated locations for higher availability against a regional failure; <strong>versioning</strong> preserves prior object generations on overwrite or delete (an "undo" mechanism, usually paired with a lifecycle rule to expire old versions and control the extra storage cost it creates).</p>
+  <p>On access control, prefer <strong>uniform bucket-level access</strong> and IAM over legacy per-object ACLs whenever a question is framed around simplifying or auditing permissions — ACLs are the older, more granular but harder-to-audit mechanism. For encryption, Google encrypts data at rest by default at no extra cost; Cloud KMS with customer-managed encryption keys (CMEK) is the answer when a scenario specifically needs you to control key rotation and revocation yourself (see the Data Protection topic for the full CMEK-vs-CSEK breakdown).</p>
+
+  <div class="card">
+    <h3>Exam tips for this topic</h3>
+    <ul>
+      <li>Shared, simultaneous read-write access from multiple instances is Filestore, not Persistent Disk — PD read-write mode attaches to exactly one instance.</li>
+      <li>Storage class differences are about access frequency and minimum storage duration, not just &quot;how cheap&quot; — Archive has the longest minimum duration and highest retrieval cost.</li>
+      <li>Prefer uniform bucket-level access (IAM) over legacy per-object ACLs whenever a question is about simplifying or auditing bucket permissions.</li>
+    </ul>
+  </div>
+
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
+  <h2>Sample questions — Cloud Storage: Classes, Access &amp; Security</h2>
+  <p>These 6 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">Cloud Storage</span>
+    <p class="qtext">Your new app needs an assets bucket in region europe-west1 with uniform access control. Which command creates it?</p>
+    <ul class="opts">
+      <li class="correct">gcloud storage buckets create gs://acme-app-assets --location=europe-west1 --uniform-bucket-level-access<span class="tag">Correct</span></li>
+      <li>gcloud buckets new acme-app-assets</li>
+      <li>gsutil create-bucket acme-app-assets</li>
+      <li>gcloud storage create gs://... --acl=fine-grained</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> gcloud storage buckets create (successor to gsutil mb) with uniform bucket-level access is the recommended setup — IAM-only permissions, no per-object ACLs. Bucket names are globally unique.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Storage</span>
+    <p class="qtext">Which statement correctly matches the storage product to its model?</p>
+    <ul class="opts">
+      <li class="correct">Cloud Storage = objects, Persistent Disk = block, Filestore = shared file (NFS)<span class="tag">Correct</span></li>
+      <li>Cloud Storage = block, Persistent Disk = shared file (NFS), Filestore = objects</li>
+      <li>All three are object stores that differ only in price and latency</li>
+      <li>Filestore = block storage that can be attached to a single VM</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Objects (buckets, HTTP access) are Cloud Storage; block devices attached to VMs are Persistent Disk/Hyperdisk; NFS shares mounted by many clients are Filestore. Picking the wrong model is a common architecture error.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Storage ops</span>
+    <p class="qtext">You need to move all objects from bucket A to bucket B in the same project without pulling data through your own network. What is the efficient way?</p>
+    <ul class="opts">
+      <li class="correct">gcloud storage mv (or Storage Transfer Service for very large buckets) server-side<span class="tag">Correct</span></li>
+      <li>Download everything to a laptop and re-upload</li>
+      <li>Rename the bucket</li>
+      <li>Email support to swap them</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Server-side copies never touch your bandwidth; STS handles massive buckets with parallelism and checksums. Buckets can&#39;t be renamed (names are global/permanent) — &#39;rename&#39; is really copy+delete.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Storage security</span>
+    <p class="qtext">After reading about yet another public-bucket data breach, you enable public access prevention across your org. What does it do?</p>
+    <ul class="opts">
+      <li class="correct">Blocks granting allUsers/allAuthenticatedUsers, ensuring the bucket can never be made public — enforceable by org policy<span class="tag">Correct</span></li>
+      <li>Requires every request to carry a signed URL</li>
+      <li>Encrypts objects with a second, access-specific key</li>
+      <li>Blocks all downloads from outside your VPC</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> PAP is the guardrail against accidental public buckets (a legendary breach class). Legitimate access via IAM continues; it targets only public principals.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud Storage</span>
+    <p class="qtext">You must copy a local folder of 10,000 small files into your bucket without it taking all afternoon. What is the efficient way?</p>
+    <ul class="opts">
+      <li class="correct">gcloud storage cp -r ./assets gs://bucket/ (parallelized by default; gsutil needed -m)<span class="tag">Correct</span></li>
+      <li>One gsutil cp per file in a loop</li>
+      <li>FTP to the bucket</li>
+      <li>Email attachments</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> gcloud storage parallelizes transfers automatically (legacy gsutil required -m for parallelism). Buckets have no FTP endpoint; per-file serial copies are painfully slow.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Storage</span>
+    <p class="qtext">Several GKE pods and Compute Engine VMs must all read and write the same POSIX file share concurrently. Which service?</p>
+    <ul class="opts">
+      <li class="correct">Filestore (managed NFS)<span class="tag">Correct</span></li>
+      <li>A single persistent disk attached read-write to every pod and VM at once</li>
+      <li>Cloud Storage, mounted with gsutil rsync running on each client</li>
+      <li>Local SSDs on each machine, replicated manually between them</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Filestore provides managed NFS that many clients mount simultaneously with POSIX semantics. A PD can be attached read-write to only one instance at a time (multi-writer is niche), and object storage isn&#39;t a POSIX filesystem.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this for real</h3>
+    <p>The app has dozens more questions on this and every other topic, with instant scoring,
+    spaced repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=2#view-home">Start practicing →</a>
+  </div>
+
+  <h2>This topic shows up in</h2>
+  <div class="domain-grid">
+    <a href="../../domains/planning-and-configuring-a-cloud-solution/"><strong>Domain 2</strong>Planning &amp; Configuring a Cloud Solution</a>
+      <a href="../../domains/deploying-and-implementing-a-cloud-solution/"><strong>Domain 3</strong>Deploying &amp; Implementing a Cloud Solution</a>
+      <a href="../../domains/ensuring-successful-operation/"><strong>Domain 4</strong>Ensuring Successful Operation</a>
+      <a href="../../domains/configuring-access-and-security/"><strong>Domain 5</strong>Configuring Access and Security</a>
+  </div>
+
+  <h2>Other topics</h2>
+  <div class="domain-grid">
+    <a href="../iam-roles-and-permissions/"><strong>Topic</strong>IAM Roles &amp; Permissions</a>
+      <a href="../service-accounts-and-identity/"><strong>Topic</strong>Service Accounts &amp; Identity</a>
+      <a href="../billing-pricing-and-cost-management/"><strong>Topic</strong>Billing, Pricing &amp; Cost Management</a>
+      <a href="../google-kubernetes-engine-gke/"><strong>Topic</strong>Google Kubernetes Engine (GKE)</a>
+      <a href="../gcloud-cli-commands/"><strong>Topic</strong>gcloud CLI Commands</a>
+      <a href="../choosing-the-right-compute-option/"><strong>Topic</strong>Choosing the Right Compute Option</a>
+      <a href="../compute-engine-deployment-and-operations/"><strong>Topic</strong>Compute Engine Deployment &amp; Operations</a>
+      <a href="../cloud-monitoring-logging-and-audit-logs/"><strong>Topic</strong>Cloud Monitoring, Logging &amp; Audit Logs</a>
+      <a href="../vpc-networking-and-load-balancing/"><strong>Topic</strong>VPC Networking &amp; Load Balancing</a>
+      <a href="../choosing-a-database/"><strong>Topic</strong>Choosing a Database on Google Cloud</a>
+      <a href="../resource-hierarchy-projects-and-apis/"><strong>Topic</strong>Resource Hierarchy, Projects &amp; APIs</a>
+      <a href="../serverless-compute-cloud-run-and-app-engine/"><strong>Topic</strong>Serverless Compute: Cloud Run &amp; App Engine</a>
+      <a href="../data-protection-encryption-and-secret-manager/"><strong>Topic</strong>Data Protection: Encryption &amp; Secret Manager</a>
+      <a href="../infrastructure-as-code-and-cloud-shell/"><strong>Topic</strong>Infrastructure as Code &amp; Cloud Shell</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="../../analytics-config.js"></script>
+<script defer src="../../analytics.js"></script>
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
+</body>
+</html>

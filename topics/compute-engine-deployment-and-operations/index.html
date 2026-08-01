@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compute Engine Deployment &amp; Operations — GCP ACE Exam Guide</title>
+<meta name="description" content="Compute Engine on the GCP ACE exam: instance templates, managed instance groups, startup scripts, and day-2 operations like machine-type changes — free sample questions.">
+<link rel="canonical" href="https://cloudaceprep.com/topics/compute-engine-deployment-and-operations/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Compute Engine Deployment &amp; Operations — GCP ACE Exam Guide">
+<meta property="og:description" content="Compute Engine on the GCP ACE exam: instance templates, managed instance groups, startup scripts, and day-2 operations like machine-type changes — free sample questions.">
+<meta property="og:url" content="https://cloudaceprep.com/topics/compute-engine-deployment-and-operations/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Compute Engine Deployment &amp; Operations — GCP ACE Exam Guide">
+<meta name="twitter:description" content="Compute Engine on the GCP ACE exam: instance templates, managed instance groups, startup scripts, and day-2 operations like machine-type changes — free sample questions.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Topics","item":"https://cloudaceprep.com/topics/"},{"@type":"ListItem","position":4,"name":"Compute Engine Deployment & Operations","item":"https://cloudaceprep.com/topics/compute-engine-deployment-and-operations/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE: Compute Engine Deployment & Operations — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Compute Engine Deployment & Operations"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"You are provisioning your team's first VM: web-1, machine type e2-medium, in zone us-central1-a. Which command creates it?","acceptedAnswer":{"@type":"Answer","text":"gcloud compute instances create web-1 --machine-type=e2-medium --zone=us-central1-a — gcloud compute instances create is the canonical command; --machine-type and --zone set shape and placement (omitting --zone uses your configured default). The other forms are not valid gcloud syntax."}},{"@type":"Question","name":"A Linux VM stopped responding to SSH entirely. Which built-in tool lets you see boot/kernel output and even log in for debugging?","acceptedAnswer":{"@type":"Answer","text":"The serial console (view serial port output / enable interactive serial console) — Serial port output shows boot logs even when networking is broken, and the interactive serial console permits emergency login. Trace and flow logs won't show a hung boot."}},{"@type":"Question","name":"You need every new VM in your fleet to run a setup script automatically on first boot, with no manual steps. What do you use?","acceptedAnswer":{"@type":"Answer","text":"A startup script via instance metadata (--metadata=startup-script=... or startup-script-url) — Compute Engine executes the startup-script metadata key at boot (every boot, in fact). It's the standard bootstrap mechanism; manual steps don't scale to MIGs, and descriptions are inert text."}},{"@type":"Question","name":"Snapshots of critical disks must be taken every 6 hours automatically, retaining 14 days. What do you configure?","acceptedAnswer":{"@type":"Answer","text":"A snapshot schedule (resource policy) attached to the disks — Snapshot schedules automate creation and retention/deletion per disk. Templates define new VMs and live migration is host maintenance — neither backs anything up."}},{"@type":"Question","name":"You need a shell on one of your Linux VMs to check application logs. How do you connect to it using gcloud?","acceptedAnswer":{"@type":"Answer","text":"gcloud compute ssh web-1 --zone=us-central1-a — gcloud compute ssh manages keys and connects (through IAP tunneling if configured for internal-only VMs). RDP is the Windows path (via a generated password and an RDP client); the other commands don't exist or are insecure."}},{"@type":"Question","name":"You resized disk data-1 on one of your VMs from 200GB to 500GB, but df -h inside the VM still shows 200GB. Why?","acceptedAnswer":{"@type":"Answer","text":"The filesystem/partition must be grown inside the OS after the disk resize — Cloud-level resize only enlarges the block device; the OS must extend the partition/filesystem (growpart + resize2fs/xfs_growfs; Windows Disk Management). This two-step is a classic ops gotcha."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / <a href="../../topics/">Topics</a> / Compute Engine Deployment &amp; Operations</p>
+  <h1>Compute Engine Deployment &amp; Operations</h1>
+  <p class="lede">What actually gets tested on the Google Cloud Associate Cloud Engineer exam,
+  the traps to know, and 6 free sample questions with full explanations.</p>
+
+  <p><code>gcloud compute instances create</code> is the canonical way to create a VM, with <code>--machine-type</code> and <code>--zone</code> setting shape and placement (omitting <code>--zone</code> falls back to your configured default, which the exam likes to use as a "why did this land in the wrong place" trap). For repeatable, scalable deployment, an <strong>instance template</strong> plus a <strong>managed instance group (MIG)</strong> is the pattern to reach for — MIGs are how you get autoscaling, autohealing, and rolling updates, and almost any "deploy this at scale" scenario resolves to "create a template, then a MIG from it," not manually creating individual instances.</p>
+  <p>Bootstrapping runs through the <code>startup-script</code> metadata key, which Compute Engine executes on every boot (not just the first) — the standard way to configure a fresh instance without baking a fully custom image, though a custom image is the better answer when the setup is heavy enough that repeating it at every boot would be wasteful.</p>
+  <p>On day-2 operations: changing a <strong>running</strong> instance's machine type normally requires stopping it first for most machine-type changes, which is a common "why did this fail" setup in scenario questions. Remote access splits by OS — <code>gcloud compute ssh</code> manages keys and connects (through IAP tunneling when configured for internal-only VMs) for Linux, while <code>reset-windows-password</code> creates or resets a local Windows account and returns a password for RDP, since SSH isn't the default Windows path and no password is emailed automatically.</p>
+
+  <div class="card">
+    <h3>Exam tips for this topic</h3>
+    <ul>
+      <li>&quot;Deploy/scale automatically&quot; almost always resolves to an instance template + managed instance group, not manually creating individual Compute Engine instances.</li>
+      <li>Changing a running instance&#39;s machine type normally requires stopping it first — a frequent &quot;why did this fail&quot; setup in operations scenarios.</li>
+      <li>startup-script runs on every boot, which makes it right for lightweight bootstrap and wrong (too repetitive/slow) for heavy setup — that&#39;s when a custom image is the better answer instead.</li>
+    </ul>
+  </div>
+
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
+  <h2>Sample questions — Compute Engine Deployment &amp; Operations</h2>
+  <p>These 6 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">Compute Engine</span>
+    <p class="qtext">You are provisioning your team&#39;s first VM: web-1, machine type e2-medium, in zone us-central1-a. Which command creates it?</p>
+    <ul class="opts">
+      <li class="correct">gcloud compute instances create web-1 --machine-type=e2-medium --zone=us-central1-a<span class="tag">Correct</span></li>
+      <li>gcloud compute create instance web-1 --type e2-medium</li>
+      <li>gcloud instances new web-1 e2-medium us-central1-a</li>
+      <li>gcloud vm create web-1</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> gcloud compute instances create is the canonical command; --machine-type and --zone set shape and placement (omitting --zone uses your configured default). The other forms are not valid gcloud syntax.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Compute ops</span>
+    <p class="qtext">A Linux VM stopped responding to SSH entirely. Which built-in tool lets you see boot/kernel output and even log in for debugging?</p>
+    <ul class="opts">
+      <li class="correct">The serial console (view serial port output / enable interactive serial console)<span class="tag">Correct</span></li>
+      <li>Cloud Trace</li>
+      <li>VPC Flow Logs</li>
+      <li>The billing report</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Serial port output shows boot logs even when networking is broken, and the interactive serial console permits emergency login. Trace and flow logs won&#39;t show a hung boot.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Compute Engine</span>
+    <p class="qtext">You need every new VM in your fleet to run a setup script automatically on first boot, with no manual steps. What do you use?</p>
+    <ul class="opts">
+      <li class="correct">A startup script via instance metadata (--metadata=startup-script=... or startup-script-url)<span class="tag">Correct</span></li>
+      <li>SSH in manually after boot</li>
+      <li>A cron job created after the fact</li>
+      <li>An image with the script name in its description</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Compute Engine executes the startup-script metadata key at boot (every boot, in fact). It&#39;s the standard bootstrap mechanism; manual steps don&#39;t scale to MIGs, and descriptions are inert text.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Compute ops</span>
+    <p class="qtext">Snapshots of critical disks must be taken every 6 hours automatically, retaining 14 days. What do you configure?</p>
+    <ul class="opts">
+      <li class="correct">A snapshot schedule (resource policy) attached to the disks<span class="tag">Correct</span></li>
+      <li>A sticky note reminder</li>
+      <li>An instance template</li>
+      <li>Live migration</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Snapshot schedules automate creation and retention/deletion per disk. Templates define new VMs and live migration is host maintenance — neither backs anything up.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Compute Engine</span>
+    <p class="qtext">You need a shell on one of your Linux VMs to check application logs. How do you connect to it using gcloud?</p>
+    <ul class="opts">
+      <li class="correct">gcloud compute ssh web-1 --zone=us-central1-a<span class="tag">Correct</span></li>
+      <li>gcloud compute rdp web-1</li>
+      <li>gcloud connect web-1</li>
+      <li>telnet web-1 22</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> gcloud compute ssh manages keys and connects (through IAP tunneling if configured for internal-only VMs). RDP is the Windows path (via a generated password and an RDP client); the other commands don&#39;t exist or are insecure.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Compute ops</span>
+    <p class="qtext">You resized disk data-1 on one of your VMs from 200GB to 500GB, but df -h inside the VM still shows 200GB. Why?</p>
+    <ul class="opts">
+      <li class="correct">The filesystem/partition must be grown inside the OS after the disk resize<span class="tag">Correct</span></li>
+      <li>The resize silently failed and must be retried</li>
+      <li>Disks can&#39;t be resized</li>
+      <li>df is broken on cloud VMs</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud-level resize only enlarges the block device; the OS must extend the partition/filesystem (growpart + resize2fs/xfs_growfs; Windows Disk Management). This two-step is a classic ops gotcha.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this for real</h3>
+    <p>The app has dozens more questions on this and every other topic, with instant scoring,
+    spaced repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=3#view-home">Start practicing →</a>
+  </div>
+
+  <h2>This topic shows up in</h2>
+  <div class="domain-grid">
+    <a href="../../domains/planning-and-configuring-a-cloud-solution/"><strong>Domain 2</strong>Planning &amp; Configuring a Cloud Solution</a>
+      <a href="../../domains/deploying-and-implementing-a-cloud-solution/"><strong>Domain 3</strong>Deploying &amp; Implementing a Cloud Solution</a>
+      <a href="../../domains/ensuring-successful-operation/"><strong>Domain 4</strong>Ensuring Successful Operation</a>
+  </div>
+
+  <h2>Other topics</h2>
+  <div class="domain-grid">
+    <a href="../iam-roles-and-permissions/"><strong>Topic</strong>IAM Roles &amp; Permissions</a>
+      <a href="../service-accounts-and-identity/"><strong>Topic</strong>Service Accounts &amp; Identity</a>
+      <a href="../billing-pricing-and-cost-management/"><strong>Topic</strong>Billing, Pricing &amp; Cost Management</a>
+      <a href="../google-kubernetes-engine-gke/"><strong>Topic</strong>Google Kubernetes Engine (GKE)</a>
+      <a href="../gcloud-cli-commands/"><strong>Topic</strong>gcloud CLI Commands</a>
+      <a href="../choosing-the-right-compute-option/"><strong>Topic</strong>Choosing the Right Compute Option</a>
+      <a href="../cloud-monitoring-logging-and-audit-logs/"><strong>Topic</strong>Cloud Monitoring, Logging &amp; Audit Logs</a>
+      <a href="../vpc-networking-and-load-balancing/"><strong>Topic</strong>VPC Networking &amp; Load Balancing</a>
+      <a href="../choosing-a-database/"><strong>Topic</strong>Choosing a Database on Google Cloud</a>
+      <a href="../resource-hierarchy-projects-and-apis/"><strong>Topic</strong>Resource Hierarchy, Projects &amp; APIs</a>
+      <a href="../cloud-storage-classes-access-and-security/"><strong>Topic</strong>Cloud Storage: Classes, Access &amp; Security</a>
+      <a href="../serverless-compute-cloud-run-and-app-engine/"><strong>Topic</strong>Serverless Compute: Cloud Run &amp; App Engine</a>
+      <a href="../data-protection-encryption-and-secret-manager/"><strong>Topic</strong>Data Protection: Encryption &amp; Secret Manager</a>
+      <a href="../infrastructure-as-code-and-cloud-shell/"><strong>Topic</strong>Infrastructure as Code &amp; Cloud Shell</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="../../analytics-config.js"></script>
+<script defer src="../../analytics.js"></script>
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IAM Roles &amp; Permissions — GCP ACE Exam Guide</title>
+<meta name="description" content="GCP IAM roles explained for the ACE exam: basic vs predefined vs custom roles, policy inheritance, and the exam&#39;s most-tested IAM traps — plus free sample questions.">
+<link rel="canonical" href="https://cloudaceprep.com/topics/iam-roles-and-permissions/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IAM Roles &amp; Permissions — GCP ACE Exam Guide">
+<meta property="og:description" content="GCP IAM roles explained for the ACE exam: basic vs predefined vs custom roles, policy inheritance, and the exam&#39;s most-tested IAM traps — plus free sample questions.">
+<meta property="og:url" content="https://cloudaceprep.com/topics/iam-roles-and-permissions/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="IAM Roles &amp; Permissions — GCP ACE Exam Guide">
+<meta name="twitter:description" content="GCP IAM roles explained for the ACE exam: basic vs predefined vs custom roles, policy inheritance, and the exam&#39;s most-tested IAM traps — plus free sample questions.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Topics","item":"https://cloudaceprep.com/topics/"},{"@type":"ListItem","position":4,"name":"IAM Roles & Permissions","item":"https://cloudaceprep.com/topics/iam-roles-and-permissions/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE: IAM Roles & Permissions — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — IAM Roles & Permissions"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"A developer on your team hits a permission error attaching a service account to their new VM. Which role must a user hold ON the service account to attach it (i.e., 'act as' it)?","acceptedAnswer":{"@type":"Answer","text":"roles/iam.serviceAccountUser on that service account — serviceAccountUser gates who can deploy workloads AS the SA — a critical privilege-escalation control: whoever can act as an SA effectively has its powers. Deployment always checks it."}},{"@type":"Question","name":"Which best describes how IAM policy inheritance works?","acceptedAnswer":{"@type":"Answer","text":"Policies are inherited downward, and the effective policy is the union of the resource's policy and its ancestors' policies — IAM is additive: a resource's effective policy is the union of policies set on it and everything above it, so you cannot remove an inherited grant at a lower level (deny policies are a separate, newer mechanism). Grants at higher levels therefore deserve extra care."}},{"@type":"Question","name":"Your org must give an external auditor org-wide read-only visibility into resource configurations and IAM policies — no data access, no changes. Which role fits?","acceptedAnswer":{"@type":"Answer","text":"roles/iam.securityReviewer (plus Viewer-type roles as needed) at the organization level — Security Reviewer grants list/get on IAM policies and security configs — audit visibility without modification or data reads. Admin/Owner/Editor all allow changes."}},{"@type":"Question","name":"What are the three basic (primitive) roles that predate predefined roles?","acceptedAnswer":{"@type":"Answer","text":"Owner, Editor, Viewer — Owner, Editor, and Viewer are the legacy basic roles that apply broadly across all services in a project. Google recommends predefined (or custom) roles instead because basic roles are far too coarse for least-privilege access."}},{"@type":"Question","name":"You need to check from the CLI which roles a specific user holds on your project before an access review. Which gcloud command shows this?","acceptedAnswer":{"@type":"Answer","text":"gcloud projects get-iam-policy PROJECT --flatten=bindings --filter=bindings.members:user:ana@example.com --format='table(bindings.role)' — You inspect the policy and filter bindings by member (the console's IAM page does this visually; Policy Analyzer answers 'who can access what' at scale). The other commands don't exist."}},{"@type":"Question","name":"Which statement about the basic Editor role is a reason Google discourages its use in production?","acceptedAnswer":{"@type":"Answer","text":"It grants broad modify permissions across nearly all services, violating least privilege — Editor lets a principal modify almost every resource type in a project — far more than most jobs need — so a compromise of that account is catastrophic. Predefined roles scope permissions to a service and function. The other statements are simply false."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / <a href="../../topics/">Topics</a> / IAM Roles &amp; Permissions</p>
+  <h1>IAM Roles &amp; Permissions</h1>
+  <p class="lede">What actually gets tested on the Google Cloud Associate Cloud Engineer exam,
+  the traps to know, and 6 free sample questions with full explanations.</p>
+
+  <p>IAM shows up more than any other subject on the ACE exam, once you count how often it resurfaces inside questions that are nominally about something else. Start with the three role types: <strong>basic roles</strong> (Owner, Editor, Viewer — broad, legacy, almost never the right answer once security is in scope), <strong>predefined roles</strong> (service-scoped, Google-maintained, usually the correct choice), and <strong>custom roles</strong> (built from individual permissions when no predefined role fits, at the cost of maintaining them yourself as APIs evolve).</p>
+  <p>The mechanic the exam leans on hardest is that <strong>IAM policy is additive and inherits downward</strong>: a project's effective policy is the union of everything set directly on it plus everything set on its folders and organization above it, and there is no way to revoke an inherited grant at a lower level — only deny policies (a separate, newer mechanism) can restrict what an inherited grant allows. Grant a role on a folder and every project under it inherits it automatically; that's usually presented as a feature in the question, not a trap, but it means broad grants placed high in the hierarchy are hard to walk back later.</p>
+  <p>Principals are the "who": user accounts, service accounts, Google groups, and Workspace/Cloud Identity domains, plus special identifiers like <code>allAuthenticatedUsers</code>. Granting a role to a <strong>group</strong> rather than individually to each member is the answer whenever a question is about managing access at scale — membership changes then handle themselves with a full audit trail, instead of someone having to remember to revoke access when a person changes teams.</p>
+
+  <div class="card">
+    <h3>Exam tips for this topic</h3>
+    <ul>
+      <li>Basic roles (Owner/Editor/Viewer) are almost always the wrong answer once a question mentions least privilege or security — predefined is the usual correct choice.</li>
+      <li>IAM is additive and inherits downward; you cannot remove a grant made at a higher level from underneath it, only add a deny policy on top.</li>
+      <li>Grant roles to a Google group instead of individual users whenever a question is really about managing access at scale, not about a single one-off grant.</li>
+    </ul>
+  </div>
+
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
+  <h2>Sample questions — IAM Roles &amp; Permissions</h2>
+  <p>These 6 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">IAM</span>
+    <p class="qtext">A developer on your team hits a permission error attaching a service account to their new VM. Which role must a user hold ON the service account to attach it (i.e., &#39;act as&#39; it)?</p>
+    <ul class="opts">
+      <li class="correct">roles/iam.serviceAccountUser on that service account<span class="tag">Correct</span></li>
+      <li>roles/viewer on the project</li>
+      <li>roles/billing.user</li>
+      <li>No permission is needed</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> serviceAccountUser gates who can deploy workloads AS the SA — a critical privilege-escalation control: whoever can act as an SA effectively has its powers. Deployment always checks it.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">IAM basics</span>
+    <p class="qtext">Which best describes how IAM policy inheritance works?</p>
+    <ul class="opts">
+      <li class="correct">Policies are inherited downward, and the effective policy is the union of the resource&#39;s policy and its ancestors&#39; policies<span class="tag">Correct</span></li>
+      <li>A policy set on a project overrides and removes any permissions that were granted at the organization level above it</li>
+      <li>Policies apply only at the level where they are defined and are never inherited by child resources</li>
+      <li>Child policies must be explicitly synchronized with their parent policies before they take effect</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> IAM is additive: a resource&#39;s effective policy is the union of policies set on it and everything above it, so you cannot remove an inherited grant at a lower level (deny policies are a separate, newer mechanism). Grants at higher levels therefore deserve extra care.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">IAM</span>
+    <p class="qtext">Your org must give an external auditor org-wide read-only visibility into resource configurations and IAM policies — no data access, no changes. Which role fits?</p>
+    <ul class="opts">
+      <li class="correct">roles/iam.securityReviewer (plus Viewer-type roles as needed) at the organization level<span class="tag">Correct</span></li>
+      <li>Organization Administrator, since auditors need full visibility</li>
+      <li>Owner on each project, granted temporarily for the audit period</li>
+      <li>Editor at the org</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Security Reviewer grants list/get on IAM policies and security configs — audit visibility without modification or data reads. Admin/Owner/Editor all allow changes.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">IAM basics</span>
+    <p class="qtext">What are the three basic (primitive) roles that predate predefined roles?</p>
+    <ul class="opts">
+      <li class="correct">Owner, Editor, Viewer<span class="tag">Correct</span></li>
+      <li>Admin, Writer, Reader</li>
+      <li>Root, User, Guest</li>
+      <li>Manager, Contributor, Auditor</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Owner, Editor, and Viewer are the legacy basic roles that apply broadly across all services in a project. Google recommends predefined (or custom) roles instead because basic roles are far too coarse for least-privilege access.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">IAM</span>
+    <p class="qtext">You need to check from the CLI which roles a specific user holds on your project before an access review. Which gcloud command shows this?</p>
+    <ul class="opts">
+      <li class="correct">gcloud projects get-iam-policy PROJECT --flatten=bindings --filter=bindings.members:user:ana@example.com --format=&#39;table(bindings.role)&#39;<span class="tag">Correct</span></li>
+      <li>gcloud iam whois ana@example.com --project=PROJECT --show-roles</li>
+      <li>gcloud iam users describe ana@example.com --format=&#39;table(roles)&#39;</li>
+      <li>gcloud iam roles list --member=user:ana@example.com</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> You inspect the policy and filter bindings by member (the console&#39;s IAM page does this visually; Policy Analyzer answers &#39;who can access what&#39; at scale). The other commands don&#39;t exist.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">IAM basics</span>
+    <p class="qtext">Which statement about the basic Editor role is a reason Google discourages its use in production?</p>
+    <ul class="opts">
+      <li class="correct">It grants broad modify permissions across nearly all services, violating least privilege<span class="tag">Correct</span></li>
+      <li>It cannot be granted to Google groups, so every developer needs an individual grant</li>
+      <li>It only works while the project remains inside the free tier usage limits</li>
+      <li>It expires after 90 days and must be re-granted, causing operational overhead</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Editor lets a principal modify almost every resource type in a project — far more than most jobs need — so a compromise of that account is catastrophic. Predefined roles scope permissions to a service and function. The other statements are simply false.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this for real</h3>
+    <p>The app has dozens more questions on this and every other topic, with instant scoring,
+    spaced repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=5#view-home">Start practicing →</a>
+  </div>
+
+  <h2>This topic shows up in</h2>
+  <div class="domain-grid">
+    <a href="../../domains/setting-up-a-cloud-solution-environment/"><strong>Domain 1</strong>Setting Up a Cloud Solution Environment</a>
+      <a href="../../domains/configuring-access-and-security/"><strong>Domain 5</strong>Configuring Access and Security</a>
+  </div>
+
+  <h2>Other topics</h2>
+  <div class="domain-grid">
+    <a href="../service-accounts-and-identity/"><strong>Topic</strong>Service Accounts &amp; Identity</a>
+      <a href="../billing-pricing-and-cost-management/"><strong>Topic</strong>Billing, Pricing &amp; Cost Management</a>
+      <a href="../google-kubernetes-engine-gke/"><strong>Topic</strong>Google Kubernetes Engine (GKE)</a>
+      <a href="../gcloud-cli-commands/"><strong>Topic</strong>gcloud CLI Commands</a>
+      <a href="../choosing-the-right-compute-option/"><strong>Topic</strong>Choosing the Right Compute Option</a>
+      <a href="../compute-engine-deployment-and-operations/"><strong>Topic</strong>Compute Engine Deployment &amp; Operations</a>
+      <a href="../cloud-monitoring-logging-and-audit-logs/"><strong>Topic</strong>Cloud Monitoring, Logging &amp; Audit Logs</a>
+      <a href="../vpc-networking-and-load-balancing/"><strong>Topic</strong>VPC Networking &amp; Load Balancing</a>
+      <a href="../choosing-a-database/"><strong>Topic</strong>Choosing a Database on Google Cloud</a>
+      <a href="../resource-hierarchy-projects-and-apis/"><strong>Topic</strong>Resource Hierarchy, Projects &amp; APIs</a>
+      <a href="../cloud-storage-classes-access-and-security/"><strong>Topic</strong>Cloud Storage: Classes, Access &amp; Security</a>
+      <a href="../serverless-compute-cloud-run-and-app-engine/"><strong>Topic</strong>Serverless Compute: Cloud Run &amp; App Engine</a>
+      <a href="../data-protection-encryption-and-secret-manager/"><strong>Topic</strong>Data Protection: Encryption &amp; Secret Manager</a>
+      <a href="../infrastructure-as-code-and-cloud-shell/"><strong>Topic</strong>Infrastructure as Code &amp; Cloud Shell</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Analytics + ad config/loaders — both inert (no script requests, no
+     cookies, no DOM insertion) while their respective config values are
+     empty, which is the committed default. -->
+<script defer src="../../analytics-config.js"></script>
+<script defer src="../../analytics.js"></script>
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
+</body>
+</html>
