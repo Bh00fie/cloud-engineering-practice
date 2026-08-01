@@ -18,6 +18,7 @@ const DOMAINS = {
 const MOCK_MIX = { 1: 10, 2: 9, 3: 12, 4: 10, 5: 9 };
 
 const STORE_KEY = "gcp-ace-progress-v1";
+const QUIZ_RESUME_KEY = "gcp-ace-quiz-inprogress-v1";
 
 // ---------------------------------------------------------------------------
 // Persistence
@@ -40,6 +41,52 @@ function saveStore() {
   localStorage.setItem(STORE_KEY, JSON.stringify(store));
   // Push to Firestore when a user is signed in (auth.js installs window.cloudSync).
   if (window.cloudSync) window.cloudSync.scheduleSave(store);
+}
+
+// ---------------------------------------------------------------------------
+// Quiz-in-progress persistence — without this, `quiz` (below) is memory-only,
+// so a refresh, crash, or accidental back-navigation mid-mock-exam loses the
+// entire session with nothing recorded. Stores just enough to rehydrate:
+// question IDs (not full question objects — those are looked up again from
+// BANK by id, so a bank edit that removes a question fails safely rather
+// than resurrecting stale data), position, running score, and the mock
+// timer's absolute end time.
+// ---------------------------------------------------------------------------
+
+function saveQuizProgress() {
+  if (!quiz) return;
+  try {
+    localStorage.setItem(QUIZ_RESUME_KEY, JSON.stringify({
+      mode: quiz.mode,
+      qIds: quiz.qs.map((q) => q.id),
+      i: quiz.i,
+      correct: quiz.correct,
+      byDomain: quiz.byDomain,
+      timerEndsAt: quiz.mode === "mock" ? timerEndsAt : null,
+      savedAt: Date.now(),
+    }));
+  } catch (e) { /* localStorage unavailable (quota, private mode) — resume just won't be offered */ }
+}
+
+function clearQuizProgress() {
+  try { localStorage.removeItem(QUIZ_RESUME_KEY); } catch (e) { /* ignore */ }
+}
+
+function loadQuizProgress() {
+  try {
+    const raw = localStorage.getItem(QUIZ_RESUME_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+// Rehydrates saved question IDs against the live bank. Returns null (and
+// clears the stale snapshot) if the shape is wrong or any question no longer
+// exists — e.g. data/*.js was edited between the save and the resume.
+function rehydrateQuizProgress(saved) {
+  if (!saved || !Array.isArray(saved.qIds) || typeof saved.i !== "number") { clearQuizProgress(); return null; }
+  const qs = saved.qIds.map((id) => BANK.find((q) => q.id === id)).filter(Boolean);
+  if (qs.length !== saved.qIds.length || saved.i < 0 || saved.i >= qs.length) { clearQuizProgress(); return null; }
+  return qs;
 }
 
 // ---------------------------------------------------------------------------
@@ -166,6 +213,7 @@ function startQuiz(mode) {
   } else {
     timerEl.hidden = true;
   }
+  saveQuizProgress(); // after timerEndsAt is set above, so a mock's first snapshot has the real deadline
   renderQuestion();
 }
 
@@ -204,11 +252,16 @@ function renderQuestion() {
   document.getElementById("q-check").hidden = false;
   document.getElementById("q-check").disabled = true;
   document.getElementById("q-next").hidden = true;
-  // Ads stay off while a question is in progress — see the placement note on
-  // #quiz-ad-slot in index.html. Re-hidden every question; checkAnswer()
-  // reveals it only once feedback is on screen.
+  // Footer ad slot: sits below the Check/Next buttons, outside the question
+  // card, so it's visually separated from every clickable option — shown for
+  // the whole question now, not just after checking. AdsBridge.reveal() only
+  // ever inserts the <ins> once (fillSlot's dataset.filled guard), so this
+  // doesn't request a fresh ad per question, just keeps the same one visible.
   const quizAdSlot = document.getElementById("quiz-ad-slot");
-  if (quizAdSlot) quizAdSlot.hidden = true;
+  if (quizAdSlot) {
+    quizAdSlot.hidden = false;
+    window.AdsBridge?.reveal(quizAdSlot);
+  }
 
   const box = document.getElementById("q-options");
   box.innerHTML = "";
@@ -291,20 +344,15 @@ function checkAnswer() {
   next.hidden = false;
   next.textContent = quiz.i === quiz.qs.length - 1 ? "Finish" : "Next";
   next.focus();
-
-  // Now that feedback is showing and options are locked, this is the one
-  // acceptable moment to surface a quiz-flow ad (see placement note in
-  // index.html). No-op whenever ads aren't configured/consented.
-  const quizAdSlot = document.getElementById("quiz-ad-slot");
-  if (quizAdSlot) {
-    quizAdSlot.hidden = false;
-    window.AdsBridge?.reveal(quizAdSlot);
-  }
 }
 
 function nextQuestion() {
   if (quiz.i === quiz.qs.length - 1) { finishQuiz(); return; }
   quiz.i += 1;
+  // Saved at question boundaries only (here and in startQuiz), never mid-
+  // feedback — so a resumed quiz always lands on a clean, unanswered
+  // question rather than reconstructing a half-answered, ambiguous one.
+  saveQuizProgress();
   renderQuestion();
 }
 
@@ -312,7 +360,7 @@ function quitQuiz() {
   stopTimer();
   const answered = Object.values(quiz.byDomain).reduce((s, [, t]) => s + t, 0);
   if (answered > 0) finishQuiz(true);
-  else { quiz = null; goHome(); }
+  else { clearQuizProgress(); quiz = null; goHome(); }
 }
 
 // Accuracy band shared by the score ring and the per-domain breakdown bars —
@@ -383,6 +431,7 @@ function practiceWeakestDomain() {
 
 function finishQuiz(partial) {
   stopTimer();
+  clearQuizProgress(); // this session is concluding one way or another — no resume snapshot should outlive it
   const answered = Object.values(quiz.byDomain).reduce((s, [, t]) => s + t, 0);
   if (answered > 0) {
     store.sessions.push({
@@ -433,7 +482,11 @@ function show(id) {
 function goHome() {
   layoutAuthForHome();
   renderDashboard();
-  show("view-home");
+  // renderDashboard() -> renderResumeBanner() can auto-finish and show an
+  // overdue mock exam's results (timer expired while the tab was closed).
+  // Don't clobber that with view-home right after — check whether it
+  // already switched the view before asserting our own.
+  if (document.getElementById("view-results").hidden) show("view-home");
 }
 
 // ---------------------------------------------------------------------------
@@ -491,7 +544,67 @@ const TILE_ICONS = {
   last: `<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M10 3l1.9 4 4.3.5-3.2 3 .9 4.3L10 12.7 6.1 14.8l.9-4.3-3.2-3 4.3-.5L10 3Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>`,
 };
 
+const RESUME_MODE_NAMES = { quick: "Quick quiz", mock: "Mock exam", domain: "Domain practice", missed: "Review missed" };
+
+// Shows/hides the "resume your quiz" card on the home screen. Called from
+// renderDashboard(), so it runs on every fresh load and every return to
+// view-home — the two moments a stale in-progress quiz needs to surface.
+function renderResumeBanner() {
+  const card = document.getElementById("resume-card");
+  const saved = loadQuizProgress();
+  const qs = saved && rehydrateQuizProgress(saved);
+  if (!saved || !qs) { card.hidden = true; return; }
+
+  // A mock exam whose timer already expired while the tab was closed gets
+  // auto-finished (and recorded) rather than offered as "resumable" with a
+  // dead clock. This runs quietly — no banner flash before it resolves.
+  if (saved.mode === "mock" && saved.timerEndsAt && saved.timerEndsAt <= Date.now()) {
+    quiz = { qs, i: saved.i, correct: saved.correct, byDomain: saved.byDomain, mode: saved.mode, checked: false, selection: new Set() };
+    finishQuiz(true);
+    return;
+  }
+
+  const answered = Object.values(saved.byDomain).reduce((s, [, t]) => s + t, 0);
+  let sub = `${RESUME_MODE_NAMES[saved.mode]} · question ${saved.i + 1} of ${qs.length}` +
+    (answered ? ` · ${saved.correct}/${answered} correct so far` : "");
+  if (saved.mode === "mock" && saved.timerEndsAt) {
+    const minsLeft = Math.max(0, Math.floor((saved.timerEndsAt - Date.now()) / 60000));
+    sub += ` · ${minsLeft} min left`;
+  }
+  document.getElementById("resume-sub").textContent = sub;
+  card.hidden = false;
+}
+
+function resumeQuiz() {
+  const saved = loadQuizProgress();
+  const qs = saved && rehydrateQuizProgress(saved);
+  if (!saved || !qs) { document.getElementById("resume-card").hidden = true; return; }
+
+  layoutAuthForHome();
+  lastMode = saved.mode;
+  quiz = { qs, i: saved.i, correct: saved.correct, byDomain: saved.byDomain, mode: saved.mode, checked: false, selection: new Set() };
+  resetChat();
+  show("view-quiz");
+  const timerEl = document.getElementById("timer");
+  if (saved.mode === "mock" && saved.timerEndsAt) {
+    timerEndsAt = saved.timerEndsAt;
+    timerEl.hidden = false;
+    tickTimer();
+    timerHandle = setInterval(tickTimer, 1000);
+  } else {
+    timerEl.hidden = true;
+  }
+  renderQuestion();
+}
+
+function discardQuizProgress() {
+  clearQuizProgress();
+  document.getElementById("resume-card").hidden = true;
+  showToast("Discarded — starting fresh next time.");
+}
+
 function renderDashboard() {
+  renderResumeBanner();
   const isFirstRun = store.sessions.length === 0;
   document.getElementById("hero-firstrun").hidden = !isFirstRun;
   document.getElementById("stat-tiles-heading").hidden = isFirstRun;

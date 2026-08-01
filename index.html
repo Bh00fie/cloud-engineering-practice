@@ -143,6 +143,7 @@
   .hero-sub { font-size: 15.5px; color: var(--ink-2); margin: 0 0 20px; max-width: 58ch; }
   .hero-cta { font-size: 16px; padding: 13px 22px; }
   .hero-note { font-size: 12.5px; color: var(--ink-3); margin: 12px 0 0; }
+  .resume-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
   button {
     font: inherit;
@@ -537,6 +538,20 @@
 <main>
   <!-- HOME -->
   <section id="view-home">
+    <!-- Shown only when a saved localStorage snapshot of an in-progress quiz
+         exists — see saveQuizProgress()/renderResumeBanner() in app.js. Sits
+         above hero-firstrun since resuming an already-started session is
+         more urgent than the first-run pitch. -->
+    <section class="card hero-card" id="resume-card" hidden>
+      <p class="hero-eyebrow">In progress</p>
+      <h2 class="hero-title">Resume where you left off</h2>
+      <p class="hero-sub" id="resume-sub"></p>
+      <div class="resume-actions">
+        <button class="primary hero-cta" onclick="resumeQuiz()">Resume</button>
+        <button onclick="discardQuizProgress()">Discard</button>
+      </div>
+    </section>
+
     <section class="card hero-card" id="hero-firstrun" hidden>
       <p class="hero-eyebrow">658 practice questions · 5 exam domains · free</p>
       <h2 class="hero-title">Study smarter for the Associate Cloud Engineer exam</h2>
@@ -656,13 +671,12 @@
       </div>
     </div>
 
-    <!-- Quiz-flow ad slot: intentionally the ONLY ad-eligible spot inside the
-         quiz view, and only ever shown after an answer is checked (feedback
-         already on screen, options already locked) — never while a question
-         is in progress. renderQuestion()/checkAnswer() in app.js toggle
-         `hidden`; ads.js fills it lazily via AdsBridge.reveal() the first
-         time it's shown, so no ad is requested for a question the visitor
-         hasn't finished answering yet. -->
+    <!-- Quiz-flow ad slot: a footer position, outside the question card and
+         below the Check/Next buttons — physically separated from every
+         clickable option, so it's visible for the whole question rather than
+         gated to only after checking. renderQuestion() in app.js reveals it;
+         AdsBridge.reveal()'s dataset.filled guard means it's inserted once
+         and stays put — a fresh question never re-requests a new ad. -->
     <div class="card ad-slot" id="quiz-ad-slot" data-ad-name="quizFeedback" hidden></div>
 
     <!-- Chat is switched off: GEMINI_API_KEY has been removed from the Netlify
