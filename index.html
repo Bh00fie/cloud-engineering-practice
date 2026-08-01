@@ -131,6 +131,7 @@
     border-radius: var(--radius-lg);
     padding: 28px 26px;
     box-shadow: var(--shadow-md);
+    margin-bottom: 14px;
   }
   .hero-eyebrow {
     /* ink-1 (not accent) on accent-soft: accent-on-accent-soft measures only
@@ -347,10 +348,19 @@
     font-size: 11px; color: var(--ink-3); text-transform: uppercase;
     letter-spacing: 0.04em; margin-bottom: 6px;
   }
-  /* Reserves space the instant the unit is inserted (before the creative
-     itself loads) so the surrounding layout doesn't shift — see the CLS
-     note in README.md. */
-  .ad-slot ins.adsbygoogle { display: block; min-height: 250px; }
+  /* adsbygoogle.js sets data-ad-status="filled" or "unfilled" on the <ins>
+     once it decides whether it actually has a real ad to serve (Google's own
+     documented mechanism for this). Reserve space ONLY once genuinely
+     filled — protecting against CLS when a real ad loads — rather than
+     unconditionally the instant the (possibly-empty) element exists. Before
+     that status resolves, or while an account is still pending AdSense
+     review, the <ins> has no content and no forced height, so it stays
+     visually collapsed instead of showing as a permanent blank box. An
+     explicit "unfilled" result is hidden outright, matching Google's own
+     recommended CSS for this exact scenario. */
+  .ad-slot ins.adsbygoogle { display: block; }
+  .ad-slot ins.adsbygoogle[data-ad-status="filled"] { min-height: 250px; }
+  .ad-slot ins.adsbygoogle[data-ad-status="unfilled"] { display: none; }
 
   .consent-banner {
     position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom));

@@ -136,7 +136,13 @@ footer.site-footer a { color: var(--ink-3); }
   font-size: 11px; color: var(--ink-3); text-transform: uppercase;
   letter-spacing: 0.04em; margin-bottom: 6px;
 }
-.ad-slot ins.adsbygoogle { display: block; min-height: 250px; }
+/* Reserve space only once adsbygoogle.js reports a real fill (its own
+   data-ad-status signal) — see index.html for the full rationale. Otherwise
+   a pending-review account or genuine no-fill shows as a permanent blank
+   box instead of collapsing away. */
+.ad-slot ins.adsbygoogle { display: block; }
+.ad-slot ins.adsbygoogle[data-ad-status="filled"] { min-height: 250px; }
+.ad-slot ins.adsbygoogle[data-ad-status="unfilled"] { display: none; }
 
 .consent-banner {
   position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 60;
