@@ -481,12 +481,17 @@ function show(id) {
 
 function goHome() {
   layoutAuthForHome();
+  const resultsHiddenBefore = document.getElementById("view-results").hidden;
   renderDashboard();
   // renderDashboard() -> renderResumeBanner() can auto-finish and show an
   // overdue mock exam's results (timer expired while the tab was closed).
-  // Don't clobber that with view-home right after — check whether it
-  // already switched the view before asserting our own.
-  if (document.getElementById("view-results").hidden) show("view-home");
+  // Only skip our own show("view-home") if THIS call is what caused that
+  // switch (hidden -> visible) — not just because results already happened
+  // to be on screen already, e.g. clicking "Back to dashboard" from a
+  // normal, already-displayed results screen.
+  const resultsHiddenAfter = document.getElementById("view-results").hidden;
+  if (resultsHiddenBefore && !resultsHiddenAfter) return;
+  show("view-home");
 }
 
 // ---------------------------------------------------------------------------
