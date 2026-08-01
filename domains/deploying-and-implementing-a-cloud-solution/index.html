@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GCP ACE Domain 3: Deploying &amp; Implementing a Cloud Solution</title>
+<meta name="description" content="ACE exam Domain 3 study guide, the exam&#39;s largest domain: deploying Compute Engine, GKE, Cloud Run, and data services — plus 8 free sample questions.">
+<link rel="canonical" href="https://cloudaceprep.com/domains/deploying-and-implementing-a-cloud-solution/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GCP ACE Domain 3: Deploying &amp; Implementing a Cloud Solution">
+<meta property="og:description" content="ACE exam Domain 3 study guide, the exam&#39;s largest domain: deploying Compute Engine, GKE, Cloud Run, and data services — plus 8 free sample questions.">
+<meta property="og:url" content="https://cloudaceprep.com/domains/deploying-and-implementing-a-cloud-solution/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="GCP ACE Domain 3: Deploying &amp; Implementing a Cloud Solution">
+<meta name="twitter:description" content="ACE exam Domain 3 study guide, the exam&#39;s largest domain: deploying Compute Engine, GKE, Cloud Run, and data services — plus 8 free sample questions.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Domain 3","item":"https://cloudaceprep.com/domains/deploying-and-implementing-a-cloud-solution/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE Domain 3: Deploying & Implementing a Cloud Solution — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Deploying & Implementing a Cloud Solution"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"Your repo has an app.yaml ready and you must deploy the App Engine app from source. Which command?","acceptedAnswer":{"@type":"Answer","text":"gcloud app deploy — gcloud app deploy reads app.yaml and deploys a new version (optionally --no-promote to keep traffic on the old version). appcfg is long dead; the others don't exist."}},{"@type":"Question","name":"Your CI machine has a locally built Docker image that must land in Artifact Registry. What are the steps to push it?","acceptedAnswer":{"@type":"Answer","text":"Configure auth (gcloud auth configure-docker REGION-docker.pkg.dev), tag the image with the repo path, docker push — Artifact Registry uses standard Docker protocol: configure the credential helper, tag REGION-docker.pkg.dev/PROJECT/REPO/IMAGE:TAG, push. Buckets and kubectl are not registries."}},{"@type":"Question","name":"You must run thousands of independent containerized simulations with retries and machine provisioning handled for you. Which service is designed for this?","acceptedAnswer":{"@type":"Answer","text":"Batch (or Cloud Run jobs for simpler cases) — Batch schedules containerized/script jobs onto managed VM pools (Spot supported) with queues and retries. Cloud Run jobs cover simpler container-to-completion workloads; the others are unrelated."}},{"@type":"Question","name":"You have a local CSV that must land in a new BigQuery table, letting BigQuery infer the schema. Which command?","acceptedAnswer":{"@type":"Answer","text":"bq load --autodetect --source_format=CSV dataset.table ./data.csv — bq load ingests local files or GCS URIs; --autodetect infers schema. BigQuery has its own bq CLI (not gcloud bigquery for loads), bq insert is for JSON streaming rows, and bq:// isn't a real scheme."}},{"@type":"Question","name":"Your five-person team merges to the main branch several times a day. Each merge should automatically build a container image, push it to Artifact Registry, and deploy it to a staging Cloud Run service — with build logs kept for audits. Nobody wants to maintain a Jenkins server. What should you use?","acceptedAnswer":{"@type":"Answer","text":"A Cloud Build trigger on the repository's main branch running a cloudbuild.yaml that builds, pushes, and deploys — Cloud Build triggers give serverless CI on every merge with logged, IAM-governed builds and native Artifact Registry/Cloud Run integration. Workstation crons die with the laptop, Friday batches defeat continuous delivery, and 'lightly maintained Jenkins' is the server they explicitly refused."}},{"@type":"Question","name":"On every push to main, your container should be built and deployed to Cloud Run automatically. Which service provides the managed CI pipeline?","acceptedAnswer":{"@type":"Answer","text":"Cloud Build with a trigger on the repo (cloudbuild.yaml builds and deploys) — Cloud Build triggers watch repos (GitHub etc.), run build steps in managed workers, and can deploy to Cloud Run/GKE. Scheduler is time-based, and laptops are not CI."}},{"@type":"Question","name":"You must point www.example.com at your load balancer's IP 203.0.113.10 using Cloud DNS. What do you set up?","acceptedAnswer":{"@type":"Answer","text":"Create/verify a public zone for example.com, then add an A record for www → 203.0.113.10 (and delegate the domain's NS to Cloud DNS) — Public serving requires a public zone whose name servers the registrar delegates to, plus the A/AAAA record. Private zones only resolve inside chosen VPCs; names and firewall rules don't publish DNS."}},{"@type":"Question","name":"An HTTP-triggered function needs to reject unauthenticated calls. What enforces this?","acceptedAnswer":{"@type":"Answer","text":"Require authentication (no allUsers invoker); callers present IAM-signed identity tokens — Serverless invocation is gated by IAM: grant roles/cloudfunctions.invoker (or run.invoker) only to authorized identities and require OIDC tokens. Hardcoded secrets and secret URLs are not authentication."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / Domain 3</p>
+  <h1>GCP ACE Domain 3: Deploying &amp; Implementing a Cloud Solution</h1>
+  <p class="lede">Roughly ~22% of the Google Cloud Associate Cloud Engineer exam. What it
+  actually covers, the traps to know, and 8 free sample questions with full explanations.</p>
+
+  <p>Domain 3 carries the most weight on the real exam, and it's where planning turns into actual <code>gcloud</code> commands and console clicks. For <strong>Compute Engine</strong>, know instance templates and managed instance groups (MIGs) cold — MIGs are how you get autoscaling, autohealing, and rolling updates, and a huge share of "how do you deploy this at scale" questions resolve to "create an instance template, then a MIG from it." Custom images versus startup scripts versus baked containers is another recurring choice.</p>
+  <p>For <strong>GKE</strong>, expect questions on cluster types (zonal vs regional, and the tradeoffs of Autopilot vs Standard), deploying workloads (Deployments, Services, and how a LoadBalancer-type Service gets you an external IP), and node pool management — resizing, upgrading, and taints/tolerations at a conceptual level. You won't need deep Kubernetes YAML mastery for ACE, but you do need to recognize what each object is for.</p>
+  <p>Data-service deployment shows up too: creating a Cloud SQL instance with the right machine type and high-availability configuration, setting up a GCS bucket with the right location and access controls, and loading data into BigQuery. Round it out with <strong>networking implementation</strong> — firewall rules (source ranges, target tags, priority and the implied-deny-all default), HTTP(S) load balancers, and Cloud DNS record types. This domain rewards hands-on lab time more than any other; reading alone won't cement it.</p>
+
+  <div class="card">
+    <h3>Exam tips for this domain</h3>
+    <ul>
+      <li>If a scenario says &quot;scale automatically&quot; or &quot;replace unhealthy instances automatically,&quot; the answer is almost always a managed instance group, not a bare Compute Engine instance.</li>
+      <li>VPC firewall rules default-deny ingress and default-allow egress; a missing firewall rule, not a broken app, is the most common reason a wrong answer says a connection &quot;fails.&quot;</li>
+      <li>Know the difference between a GKE Service of type LoadBalancer (external IP, L4) and an Ingress (HTTP(S) routing, L7) — the exam tests exactly this distinction.</li>
+    </ul>
+  </div>
+
+  <h2>Sample questions — Domain 3</h2>
+  <p>These 8 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">App Engine</span>
+    <p class="qtext">Your repo has an app.yaml ready and you must deploy the App Engine app from source. Which command?</p>
+    <ul class="opts">
+      <li class="correct">gcloud app deploy<span class="tag">Correct</span></li>
+      <li>gcloud app push</li>
+      <li>gcloud deploy app.yaml</li>
+      <li>appcfg upload</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> gcloud app deploy reads app.yaml and deploys a new version (optionally --no-promote to keep traffic on the old version). appcfg is long dead; the others don&#39;t exist.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Artifact Registry</span>
+    <p class="qtext">Your CI machine has a locally built Docker image that must land in Artifact Registry. What are the steps to push it?</p>
+    <ul class="opts">
+      <li class="correct">Configure auth (gcloud auth configure-docker REGION-docker.pkg.dev), tag the image with the repo path, docker push<span class="tag">Correct</span></li>
+      <li>gsutil cp image.tar gs://registry</li>
+      <li>kubectl push</li>
+      <li>Attach the image to an email to Google</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Artifact Registry uses standard Docker protocol: configure the credential helper, tag REGION-docker.pkg.dev/PROJECT/REPO/IMAGE:TAG, push. Buckets and kubectl are not registries.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Batch</span>
+    <p class="qtext">You must run thousands of independent containerized simulations with retries and machine provisioning handled for you. Which service is designed for this?</p>
+    <ul class="opts">
+      <li class="correct">Batch (or Cloud Run jobs for simpler cases)<span class="tag">Correct</span></li>
+      <li>Cloud DNS</li>
+      <li>An HTTP load balancer</li>
+      <li>Memorystore</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Batch schedules containerized/script jobs onto managed VM pools (Spot supported) with queues and retries. Cloud Run jobs cover simpler container-to-completion workloads; the others are unrelated.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">BigQuery</span>
+    <p class="qtext">You have a local CSV that must land in a new BigQuery table, letting BigQuery infer the schema. Which command?</p>
+    <ul class="opts">
+      <li class="correct">bq load --autodetect --source_format=CSV dataset.table ./data.csv<span class="tag">Correct</span></li>
+      <li>gcloud bigquery import data.csv</li>
+      <li>bq insert dataset.table data.csv</li>
+      <li>gsutil cp data.csv bq://dataset</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> bq load ingests local files or GCS URIs; --autodetect infers schema. BigQuery has its own bq CLI (not gcloud bigquery for loads), bq insert is for JSON streaming rows, and bq:// isn&#39;t a real scheme.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">CI/CD</span>
+    <p class="qtext">Your five-person team merges to the main branch several times a day. Each merge should automatically build a container image, push it to Artifact Registry, and deploy it to a staging Cloud Run service — with build logs kept for audits. Nobody wants to maintain a Jenkins server. What should you use?</p>
+    <ul class="opts">
+      <li class="correct">A Cloud Build trigger on the repository&#39;s main branch running a cloudbuild.yaml that builds, pushes, and deploys<span class="tag">Correct</span></li>
+      <li>A cron job on a developer&#39;s workstation</li>
+      <li>Manual builds every Friday</li>
+      <li>A large VM running Jenkins, but only lightly maintained</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud Build triggers give serverless CI on every merge with logged, IAM-governed builds and native Artifact Registry/Cloud Run integration. Workstation crons die with the laptop, Friday batches defeat continuous delivery, and &#39;lightly maintained Jenkins&#39; is the server they explicitly refused.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud Build</span>
+    <p class="qtext">On every push to main, your container should be built and deployed to Cloud Run automatically. Which service provides the managed CI pipeline?</p>
+    <ul class="opts">
+      <li class="correct">Cloud Build with a trigger on the repo (cloudbuild.yaml builds and deploys)<span class="tag">Correct</span></li>
+      <li>Cloud Scheduler</li>
+      <li>Pub/Sub alone</li>
+      <li>A developer&#39;s laptop</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud Build triggers watch repos (GitHub etc.), run build steps in managed workers, and can deploy to Cloud Run/GKE. Scheduler is time-based, and laptops are not CI.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud DNS</span>
+    <p class="qtext">You must point www.example.com at your load balancer&#39;s IP 203.0.113.10 using Cloud DNS. What do you set up?</p>
+    <ul class="opts">
+      <li class="correct">Create/verify a public zone for example.com, then add an A record for www → 203.0.113.10 (and delegate the domain&#39;s NS to Cloud DNS)<span class="tag">Correct</span></li>
+      <li>Add the IP to a firewall rule</li>
+      <li>Create a private zone</li>
+      <li>Rename the VM to www.example.com</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Public serving requires a public zone whose name servers the registrar delegates to, plus the A/AAAA record. Private zones only resolve inside chosen VPCs; names and firewall rules don&#39;t publish DNS.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud Functions</span>
+    <p class="qtext">An HTTP-triggered function needs to reject unauthenticated calls. What enforces this?</p>
+    <ul class="opts">
+      <li class="correct">Require authentication (no allUsers invoker); callers present IAM-signed identity tokens<span class="tag">Correct</span></li>
+      <li>An if-statement checking a hardcoded password</li>
+      <li>Only obscurity of the URL</li>
+      <li>Turning off logging</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Serverless invocation is gated by IAM: grant roles/cloudfunctions.invoker (or run.invoker) only to authorized identities and require OIDC tokens. Hardcoded secrets and secret URLs are not authentication.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this domain for real</h3>
+    <p>The app has dozens more Domain 3 questions with instant scoring, spaced
+    repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=3#view-home">Start Domain 3 practice →</a>
+  </div>
+
+  <h2>Other exam domains</h2>
+  <div class="domain-grid">
+    <a href="../setting-up-a-cloud-solution-environment/"><strong>Domain 1</strong>Setting Up a Cloud Solution Environment</a>
+      <a href="../planning-and-configuring-a-cloud-solution/"><strong>Domain 2</strong>Planning &amp; Configuring a Cloud Solution</a>
+      <a href="../ensuring-successful-operation/"><strong>Domain 4</strong>Ensuring Successful Operation</a>
+      <a href="../configuring-access-and-security/"><strong>Domain 5</strong>Configuring Access and Security</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+  Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+</footer>
+</body>
+</html>

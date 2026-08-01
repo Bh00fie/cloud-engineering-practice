@@ -1,0 +1,8 @@
+# GCP ACE Practice — https://cloudaceprep.com
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /netlify/
+Disallow: /tools/
+
+Sitemap: https://cloudaceprep.com/sitemap.xml

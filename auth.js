@@ -131,8 +131,16 @@ function initAuth() {
     if (e.key === "Enter") el("auth-signin-btn").click();
   });
 
-  el("auth-signout-btn").onclick = async () => {
-    if (!confirm("Sign out? Your progress is saved in the cloud. The local copy on this device will be cleared.")) return;
+  // Inline confirm row (#signout-confirm in index.html) instead of the OS
+  // confirm() dialog, which renders as a jarring native popup on mobile.
+  el("auth-signout-btn").onclick = () => {
+    el("signout-confirm").hidden = false;
+  };
+  el("signout-confirm-no").onclick = () => {
+    el("signout-confirm").hidden = true;
+  };
+  el("signout-confirm-yes").onclick = async () => {
+    el("signout-confirm").hidden = true;
     clearTimeout(saveTimer);
     await flush();
     await signOut(auth);
@@ -162,7 +170,8 @@ function initAuth() {
         await flush();
       } catch (e) {
         console.error("Could not load cloud progress:", e);
-        alert("Signed in, but loading cloud progress failed. Check your connection and Firestore rules, then reload.");
+        errBox.textContent = "Signed in, but loading cloud progress failed. Check your connection, then reload.";
+        errBox.hidden = false;
       }
     } else if (wasSignedIn) {
       window.cloudBridge.clearLocal();

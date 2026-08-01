@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GCP ACE Domain 2: Planning &amp; Configuring a Cloud Solution</title>
+<meta name="description" content="ACE exam Domain 2 study guide: choosing the right compute, storage, database, and networking service on Google Cloud — plus 8 free sample questions.">
+<link rel="canonical" href="https://cloudaceprep.com/domains/planning-and-configuring-a-cloud-solution/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GCP ACE Domain 2: Planning &amp; Configuring a Cloud Solution">
+<meta property="og:description" content="ACE exam Domain 2 study guide: choosing the right compute, storage, database, and networking service on Google Cloud — plus 8 free sample questions.">
+<meta property="og:url" content="https://cloudaceprep.com/domains/planning-and-configuring-a-cloud-solution/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="GCP ACE Domain 2: Planning &amp; Configuring a Cloud Solution">
+<meta name="twitter:description" content="ACE exam Domain 2 study guide: choosing the right compute, storage, database, and networking service on Google Cloud — plus 8 free sample questions.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Domain 2","item":"https://cloudaceprep.com/domains/planning-and-configuring-a-cloud-solution/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE Domain 2: Planning & Configuring a Cloud Solution — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Planning & Configuring a Cloud Solution"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"App Engine allows how many applications per project?","acceptedAnswer":{"@type":"Answer","text":"One app per project (with multiple services and versions inside it) — Each project hosts exactly one App Engine app, in one region chosen at creation (immutable); the app subdivides into services, each with versions. Needing 'another app' typically means another service — or another project."}},{"@type":"Question","name":"Which deployment gives the HIGHEST availability for a critical stateless service?","acceptedAnswer":{"@type":"Answer","text":"Multi-region: serving from at least two regions behind a global load balancer — Availability tiers: single zone < multi-zone (survives zone loss) < multi-region (survives regional outage). Global LB with backends in multiple regions is the top tier for stateless serving; live migration handles host maintenance, not zone or region failure."}},{"@type":"Question","name":"Your global users experience slow loads of static assets served from a bucket via HTTPS LB. What do you enable?","acceptedAnswer":{"@type":"Answer","text":"Cloud CDN on the load balancer's backend bucket — Cloud CDN caches content at Google edge locations worldwide, slashing latency and egress cost for static assets. VM scaling doesn't shorten the geographic path; NAT is unrelated."}},{"@type":"Question","name":"VMs without external IPs must still download OS updates from the internet. What do you deploy?","acceptedAnswer":{"@type":"Answer","text":"Cloud NAT on the region/subnet (with a Cloud Router) — Cloud NAT gives outbound-only internet access to internal-IP VMs — the standard secure pattern. External IPs expand attack surface and are often banned by org policy; CDN and VPN address different problems."}},{"@type":"Question","name":"You need to run a stateless containerized HTTP API that scales to zero when idle and requires no cluster management. Which service fits best?","acceptedAnswer":{"@type":"Answer","text":"Cloud Run — Cloud Run runs containers serverlessly, scales from zero to many instances per request load, and needs no infrastructure management. MIGs and GKE both leave you managing VMs/clusters and don't scale to zero (GKE Autopilot pods still need the cluster); bare metal is the opposite of the requirement."}},{"@type":"Question","name":"You need a relational database with SQL, transactions, and modest scale (hundreds of GB) for a web app, with minimal ops. Which service?","acceptedAnswer":{"@type":"Answer","text":"Cloud SQL — Cloud SQL is managed MySQL/PostgreSQL/SQL Server for conventional relational workloads at single-region scale. Spanner is for globally distributed, horizontally scalable relational needs (and costs accordingly); Bigtable is NoSQL wide-column; Memorystore is an in-memory cache."}},{"@type":"Question","name":"You want Kubernetes but predictably minimal node-management toil AND per-pod billing. Which mode?","acceptedAnswer":{"@type":"Answer","text":"GKE Autopilot — Autopilot manages nodes entirely (provisioning, patching, right-sizing) and bills per pod resource requests. Standard bills per node and leaves node ops to you; kubeadm on VMs is maximal toil; Cloud Run jobs aren't Kubernetes."}},{"@type":"Question","name":"Your data center needs a quick, encrypted connection to Google Cloud over the internet with modest bandwidth needs. Which service?","acceptedAnswer":{"@type":"Answer","text":"Cloud VPN (HA VPN) — Cloud VPN builds IPsec tunnels over the internet — fast to provision, encrypted, up to a few Gbps per tunnel; HA VPN gives a 99.99% SLA with two tunnels. Interconnects are physical circuits for high bandwidth/low latency, and Cloud NAT is outbound-only translation."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / Domain 2</p>
+  <h1>GCP ACE Domain 2: Planning &amp; Configuring a Cloud Solution</h1>
+  <p class="lede">Roughly ~18% of the Google Cloud Associate Cloud Engineer exam. What it
+  actually covers, the traps to know, and 8 free sample questions with full explanations.</p>
+
+  <p>Domain 2 is where the exam checks whether you can pick the <em>right</em> Google Cloud product for a scenario, not just recite what each one does. The classic decision is <strong>compute</strong>: Compute Engine when you need full control over the OS or specialized hardware, Google Kubernetes Engine (GKE) for containerized workloads that need orchestration at scale, Cloud Run for stateless containers that should scale to zero, and App Engine for a fully managed platform where you'd rather never think about infrastructure. Every mock question that says "minimize operational overhead" or "no infrastructure to manage" is steering you toward Cloud Run or App Engine, not Compute Engine.</p>
+  <p>The second recurring decision is <strong>storage and databases</strong>: Cloud SQL for managed MySQL/PostgreSQL/SQL Server at moderate scale, Cloud Spanner when you need horizontal scale <em>with</em> strong relational consistency across regions, Firestore for a serverless NoSQL document store behind mobile/web apps, Bigtable for high-throughput low-latency NoSQL at massive scale (time-series, IoT), and BigQuery for analytics over huge datasets with SQL. Cloud Storage rounds this out for object storage, and its <strong>storage classes</strong> (Standard, Nearline, Coldline, Archive) come up constantly — the differentiator is retrieval frequency and minimum storage duration, not just price.</p>
+  <p>Finally, expect network <strong>planning</strong> questions: when a VPC needs custom subnet ranges versus auto mode, when Cloud VPN is enough versus when Dedicated Interconnect is justified, and how VPC Peering or Shared VPC fit a multi-project setup. These are planning-stage questions — Domain 3 tests actually building the thing you planned here.</p>
+
+  <div class="card">
+    <h3>Exam tips for this domain</h3>
+    <ul>
+      <li>&quot;Minimize ops overhead / no servers to manage&quot; in a question almost always points to Cloud Run or App Engine over Compute Engine or GKE.</li>
+      <li>Cloud Spanner is the answer whenever a question needs both horizontal scale AND strong (relational) consistency across regions — that combination is Spanner&#39;s whole reason to exist.</li>
+      <li>Storage class questions are about access pattern and minimum duration, not just &quot;how cheap&quot; — Archive is cheapest per GB but has the longest minimum storage duration and highest retrieval cost.</li>
+    </ul>
+  </div>
+
+  <h2>Sample questions — Domain 2</h2>
+  <p>These 8 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">App Engine</span>
+    <p class="qtext">App Engine allows how many applications per project?</p>
+    <ul class="opts">
+      <li class="correct">One app per project (with multiple services and versions inside it)<span class="tag">Correct</span></li>
+      <li>Unlimited apps per project, with one created automatically per deployed service</li>
+      <li>One app per zone that the project has resources in</li>
+      <li>Ten apps per billing account, pooled across projects</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Each project hosts exactly one App Engine app, in one region chosen at creation (immutable); the app subdivides into services, each with versions. Needing &#39;another app&#39; typically means another service — or another project.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Availability</span>
+    <p class="qtext">Which deployment gives the HIGHEST availability for a critical stateless service?</p>
+    <ul class="opts">
+      <li class="correct">Multi-region: serving from at least two regions behind a global load balancer<span class="tag">Correct</span></li>
+      <li>Multi-zone deployment within a single region behind a regional load balancer</li>
+      <li>A single zone with the largest available machine types</li>
+      <li>A single VM relying on live migration during maintenance</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Availability tiers: single zone &lt; multi-zone (survives zone loss) &lt; multi-region (survives regional outage). Global LB with backends in multiple regions is the top tier for stateless serving; live migration handles host maintenance, not zone or region failure.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud CDN</span>
+    <p class="qtext">Your global users experience slow loads of static assets served from a bucket via HTTPS LB. What do you enable?</p>
+    <ul class="opts">
+      <li class="correct">Cloud CDN on the load balancer&#39;s backend bucket<span class="tag">Correct</span></li>
+      <li>More VM replicas in the backend instance group</li>
+      <li>A bigger machine type for the backend VMs</li>
+      <li>Cloud NAT so the bucket can serve assets faster</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud CDN caches content at Google edge locations worldwide, slashing latency and egress cost for static assets. VM scaling doesn&#39;t shorten the geographic path; NAT is unrelated.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud NAT</span>
+    <p class="qtext">VMs without external IPs must still download OS updates from the internet. What do you deploy?</p>
+    <ul class="opts">
+      <li class="correct">Cloud NAT on the region/subnet (with a Cloud Router)<span class="tag">Correct</span></li>
+      <li>External IP addresses on every VM, restricted by firewall rules</li>
+      <li>A VPN tunnel to your office so updates flow through the corporate proxy</li>
+      <li>Cloud CDN in front of the VMs to cache the update packages</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud NAT gives outbound-only internet access to internal-IP VMs — the standard secure pattern. External IPs expand attack surface and are often banned by org policy; CDN and VPN address different problems.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Compute choice</span>
+    <p class="qtext">You need to run a stateless containerized HTTP API that scales to zero when idle and requires no cluster management. Which service fits best?</p>
+    <ul class="opts">
+      <li class="correct">Cloud Run<span class="tag">Correct</span></li>
+      <li>Compute Engine managed instance group</li>
+      <li>GKE Standard</li>
+      <li>Bare metal solution</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud Run runs containers serverlessly, scales from zero to many instances per request load, and needs no infrastructure management. MIGs and GKE both leave you managing VMs/clusters and don&#39;t scale to zero (GKE Autopilot pods still need the cluster); bare metal is the opposite of the requirement.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Database choice</span>
+    <p class="qtext">You need a relational database with SQL, transactions, and modest scale (hundreds of GB) for a web app, with minimal ops. Which service?</p>
+    <ul class="opts">
+      <li class="correct">Cloud SQL<span class="tag">Correct</span></li>
+      <li>Cloud Spanner</li>
+      <li>Bigtable</li>
+      <li>Memorystore</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud SQL is managed MySQL/PostgreSQL/SQL Server for conventional relational workloads at single-region scale. Spanner is for globally distributed, horizontally scalable relational needs (and costs accordingly); Bigtable is NoSQL wide-column; Memorystore is an in-memory cache.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">GKE planning</span>
+    <p class="qtext">You want Kubernetes but predictably minimal node-management toil AND per-pod billing. Which mode?</p>
+    <ul class="opts">
+      <li class="correct">GKE Autopilot<span class="tag">Correct</span></li>
+      <li>GKE Standard with manual node pools</li>
+      <li>kubeadm on Compute Engine</li>
+      <li>Cloud Run jobs</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Autopilot manages nodes entirely (provisioning, patching, right-sizing) and bills per pod resource requests. Standard bills per node and leaves node ops to you; kubeadm on VMs is maximal toil; Cloud Run jobs aren&#39;t Kubernetes.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Hybrid connectivity</span>
+    <p class="qtext">Your data center needs a quick, encrypted connection to Google Cloud over the internet with modest bandwidth needs. Which service?</p>
+    <ul class="opts">
+      <li class="correct">Cloud VPN (HA VPN)<span class="tag">Correct</span></li>
+      <li>Dedicated Interconnect</li>
+      <li>Partner Interconnect</li>
+      <li>Cloud NAT</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud VPN builds IPsec tunnels over the internet — fast to provision, encrypted, up to a few Gbps per tunnel; HA VPN gives a 99.99% SLA with two tunnels. Interconnects are physical circuits for high bandwidth/low latency, and Cloud NAT is outbound-only translation.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this domain for real</h3>
+    <p>The app has dozens more Domain 2 questions with instant scoring, spaced
+    repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=2#view-home">Start Domain 2 practice →</a>
+  </div>
+
+  <h2>Other exam domains</h2>
+  <div class="domain-grid">
+    <a href="../setting-up-a-cloud-solution-environment/"><strong>Domain 1</strong>Setting Up a Cloud Solution Environment</a>
+      <a href="../deploying-and-implementing-a-cloud-solution/"><strong>Domain 3</strong>Deploying &amp; Implementing a Cloud Solution</a>
+      <a href="../ensuring-successful-operation/"><strong>Domain 4</strong>Ensuring Successful Operation</a>
+      <a href="../configuring-access-and-security/"><strong>Domain 5</strong>Configuring Access and Security</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+  Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+</footer>
+</body>
+</html>

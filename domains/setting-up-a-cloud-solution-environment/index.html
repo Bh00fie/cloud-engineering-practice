@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GCP ACE Domain 1: Setting Up a Cloud Solution Environment</title>
+<meta name="description" content="ACE exam Domain 1 study guide: resource hierarchy, projects, billing, Cloud Identity, and the gcloud CLI — plus 8 free sample questions with explanations.">
+<link rel="canonical" href="https://cloudaceprep.com/domains/setting-up-a-cloud-solution-environment/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GCP ACE Domain 1: Setting Up a Cloud Solution Environment">
+<meta property="og:description" content="ACE exam Domain 1 study guide: resource hierarchy, projects, billing, Cloud Identity, and the gcloud CLI — plus 8 free sample questions with explanations.">
+<meta property="og:url" content="https://cloudaceprep.com/domains/setting-up-a-cloud-solution-environment/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="GCP ACE Domain 1: Setting Up a Cloud Solution Environment">
+<meta name="twitter:description" content="ACE exam Domain 1 study guide: resource hierarchy, projects, billing, Cloud Identity, and the gcloud CLI — plus 8 free sample questions with explanations.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Domain 1","item":"https://cloudaceprep.com/domains/setting-up-a-cloud-solution-environment/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE Domain 1: Setting Up a Cloud Solution Environment — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Setting Up a Cloud Solution Environment"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"Your new project throws an error that the Compute Engine API has not been used or is disabled. What should you do?","acceptedAnswer":{"@type":"Answer","text":"Enable the API with gcloud services enable compute.googleapis.com — Each project must explicitly enable the APIs it uses; gcloud services enable (or the console API Library) fixes this. IAM roles and service accounts don't matter if the API itself is disabled, and billing being enabled is a prerequisite but the error specifically indicates a disabled API."}},{"@type":"Question","name":"A project's resources keep running but you want a different department to pay for them. What should you do?","acceptedAnswer":{"@type":"Answer","text":"Link the project to the other department's billing account — A project is linked to exactly one billing account at a time, and changing that link (requires Project Billing Manager on the project plus Billing Account User on the target account, or Billing Account Administrator) redirects all future charges without touching any resources. Migrating resources or reorganizing the hierarchy is unnecessary, and budgets only monitor spend — they don't change who pays."}},{"@type":"Question","name":"A new hire must be able to link and unlink projects to the company billing account but must NOT see or change billing account settings like payment methods. Which role should you grant on the billing account?","acceptedAnswer":{"@type":"Answer","text":"Billing Account User — Billing Account User allows associating projects with the billing account and nothing more, which matches least privilege here (paired with Project Billing Manager or Owner on the projects). Administrator could change payment settings, Viewer can only read cost information, and Project Owner is a project-level role that grants nothing on the billing account."}},{"@type":"Question","name":"Your company wants employees to use corporate credentials for Google Cloud instead of personal Gmail accounts, and it does not use Google Workspace. What should it set up?","acceptedAnswer":{"@type":"Answer","text":"Cloud Identity, then create the organization and manage users there — Cloud Identity provides managed corporate identities (and creates the Organization node) without requiring Google Workspace, and it can federate with an existing IdP such as Active Directory. Personal accounts are unmanaged, shared accounts destroy auditability, and service accounts are for workloads, not people."}},{"@type":"Question","name":"You need a machine with gcloud, kubectl, and terraform pre-installed to run a few admin commands, without installing anything locally. What is the fastest option?","acceptedAnswer":{"@type":"Answer","text":"Use Cloud Shell from the Google Cloud console — Cloud Shell is a free, browser-based shell with the Cloud SDK, kubectl, terraform, and many tools preinstalled, plus 5 GB of persistent home storage — ideal for quick admin work. A VM or local Docker adds setup time, and the mobile app is for monitoring and basic management, not full CLI work."}},{"@type":"Question","name":"You're on a train with only your phone and need to restart a misbehaving VM. What's the quickest supported option?","acceptedAnswer":{"@type":"Answer","text":"Use the Google Cloud mobile app to stop/start the instance — The Cloud mobile app supports monitoring and key management actions like starting/stopping VMs, viewing alerts, and checking billing. It's the tool designed for exactly this scenario; Cloud Shell in a phone browser technically works but is far clumsier."}},{"@type":"Question","name":"You want to experiment with Google Cloud personally with minimal risk of charges. Which combination helps most?","acceptedAnswer":{"@type":"Answer","text":"Use the free trial credits and set a budget with alert thresholds — The free trial gives credits for new accounts, the always-free tier covers small amounts of some services, and a budget with alerts warns you as spend approaches limits. Google never silently stops billing for paid accounts, and disabling APIs can break running resources without necessarily stopping charges (e.g., storage)."}},{"@type":"Question","name":"Which best describes how IAM policy inheritance works?","acceptedAnswer":{"@type":"Answer","text":"Policies are inherited downward, and the effective policy is the union of the resource's policy and its ancestors' policies — IAM is additive: a resource's effective policy is the union of policies set on it and everything above it, so you cannot remove an inherited grant at a lower level (deny policies are a separate, newer mechanism). Grants at higher levels therefore deserve extra care."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / Domain 1</p>
+  <h1>GCP ACE Domain 1: Setting Up a Cloud Solution Environment</h1>
+  <p class="lede">Roughly ~20% of the Google Cloud Associate Cloud Engineer exam. What it
+  actually covers, the traps to know, and 8 free sample questions with full explanations.</p>
+
+  <p>This is the exam's "GCP fundamentals" domain, and it's usually the easiest to pick up fast because it's about structure rather than services. Before you can deploy anything, you need somewhere to put it — and Google Cloud's answer is a strict hierarchy: an <strong>organization</strong> at the root, optional <strong>folders</strong> under it (folders can nest inside folders), <strong>projects</strong> inside folders or directly under the organization, and individual <strong>resources</strong> — VMs, buckets, databases — inside projects. IAM policies set higher in the tree are inherited downward, which is the single most-tested idea in this domain: put a policy on a folder and every project under it inherits it automatically.</p>
+  <p>Expect questions on <strong>project lifecycle</strong> (project IDs are chosen once and are immutable forever; a deleted project sits in a ~30-day recoverable state before it's gone for good and its ID can never be reused), on <strong>billing</strong> (a billing account can fund many projects; budgets and budget alerts don't cap spend by themselves — they only notify), and on <strong>Cloud Identity</strong> versus a Google Workspace account for managing users who don't need Gmail or Docs.</p>
+  <p>The other recurring theme is tooling: knowing what the <strong>Cloud SDK</strong> (<code>gcloud</code>, <code>gsutil</code>, <code>bq</code>) does versus the Console versus Cloud Shell, how to enable APIs a project needs before using a service, and the difference between a user account and a service account from day one — you'll see service accounts again in much more depth in Domain 5.</p>
+
+  <div class="card">
+    <h3>Exam tips for this domain</h3>
+    <ul>
+      <li>Memorize the hierarchy direction: Organization → Folder → Project → Resource — and that IAM inherits downward, never upward.</li>
+      <li>Project ID is permanent; project name is not. A lot of wrong answers hinge on this exact distinction.</li>
+      <li>A billing budget alert is a notification, not a spending cap — nothing stops the bill just because a budget was configured.</li>
+    </ul>
+  </div>
+
+  <h2>Sample questions — Domain 1</h2>
+  <p>These 8 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">APIs</span>
+    <p class="qtext">Your new project throws an error that the Compute Engine API has not been used or is disabled. What should you do?</p>
+    <ul class="opts">
+      <li class="correct">Enable the API with gcloud services enable compute.googleapis.com<span class="tag">Correct</span></li>
+      <li>Grant your account the roles/compute.admin role on the project</li>
+      <li>Upgrade the project&#39;s billing account to a paid support tier</li>
+      <li>Create a new service account for Compute Engine to run as</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Each project must explicitly enable the APIs it uses; gcloud services enable (or the console API Library) fixes this. IAM roles and service accounts don&#39;t matter if the API itself is disabled, and billing being enabled is a prerequisite but the error specifically indicates a disabled API.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Billing</span>
+    <p class="qtext">A project&#39;s resources keep running but you want a different department to pay for them. What should you do?</p>
+    <ul class="opts">
+      <li class="correct">Link the project to the other department&#39;s billing account<span class="tag">Correct</span></li>
+      <li>Export the project&#39;s resources to a new project owned by the other department</li>
+      <li>Create a new billing budget in the other department&#39;s name</li>
+      <li>Transfer the organization node to the other department</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> A project is linked to exactly one billing account at a time, and changing that link (requires Project Billing Manager on the project plus Billing Account User on the target account, or Billing Account Administrator) redirects all future charges without touching any resources. Migrating resources or reorganizing the hierarchy is unnecessary, and budgets only monitor spend — they don&#39;t change who pays.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Billing IAM</span>
+    <p class="qtext">A new hire must be able to link and unlink projects to the company billing account but must NOT see or change billing account settings like payment methods. Which role should you grant on the billing account?</p>
+    <ul class="opts">
+      <li class="correct">Billing Account User<span class="tag">Correct</span></li>
+      <li>Billing Account Administrator</li>
+      <li>Billing Account Viewer</li>
+      <li>Project Owner</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Billing Account User allows associating projects with the billing account and nothing more, which matches least privilege here (paired with Project Billing Manager or Owner on the projects). Administrator could change payment settings, Viewer can only read cost information, and Project Owner is a project-level role that grants nothing on the billing account.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud Identity</span>
+    <p class="qtext">Your company wants employees to use corporate credentials for Google Cloud instead of personal Gmail accounts, and it does not use Google Workspace. What should it set up?</p>
+    <ul class="opts">
+      <li class="correct">Cloud Identity, then create the organization and manage users there<span class="tag">Correct</span></li>
+      <li>Have every employee create a personal Google account with the company domain in the name</li>
+      <li>Use only service accounts for humans</li>
+      <li>Create a shared admin Google account for the whole company</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud Identity provides managed corporate identities (and creates the Organization node) without requiring Google Workspace, and it can federate with an existing IdP such as Active Directory. Personal accounts are unmanaged, shared accounts destroy auditability, and service accounts are for workloads, not people.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Cloud Shell</span>
+    <p class="qtext">You need a machine with gcloud, kubectl, and terraform pre-installed to run a few admin commands, without installing anything locally. What is the fastest option?</p>
+    <ul class="opts">
+      <li class="correct">Use Cloud Shell from the Google Cloud console<span class="tag">Correct</span></li>
+      <li>Create a Compute Engine VM and install the tools</li>
+      <li>Use the Cloud Mobile App</li>
+      <li>Install Docker locally and pull the SDK image</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Cloud Shell is a free, browser-based shell with the Cloud SDK, kubectl, terraform, and many tools preinstalled, plus 5 GB of persistent home storage — ideal for quick admin work. A VM or local Docker adds setup time, and the mobile app is for monitoring and basic management, not full CLI work.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Console</span>
+    <p class="qtext">You&#39;re on a train with only your phone and need to restart a misbehaving VM. What&#39;s the quickest supported option?</p>
+    <ul class="opts">
+      <li class="correct">Use the Google Cloud mobile app to stop/start the instance<span class="tag">Correct</span></li>
+      <li>SSH from the phone&#39;s browser into Cloud Shell and script it</li>
+      <li>Wait until you have a laptop</li>
+      <li>Email Google support to restart it</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> The Cloud mobile app supports monitoring and key management actions like starting/stopping VMs, viewing alerts, and checking billing. It&#39;s the tool designed for exactly this scenario; Cloud Shell in a phone browser technically works but is far clumsier.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Free tier</span>
+    <p class="qtext">You want to experiment with Google Cloud personally with minimal risk of charges. Which combination helps most?</p>
+    <ul class="opts">
+      <li class="correct">Use the free trial credits and set a budget with alert thresholds<span class="tag">Correct</span></li>
+      <li>Rely on Google to stop billing automatically at $0</li>
+      <li>Create resources only in expensive regions to get discounts</li>
+      <li>Disable all APIs after creating resources</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> The free trial gives credits for new accounts, the always-free tier covers small amounts of some services, and a budget with alerts warns you as spend approaches limits. Google never silently stops billing for paid accounts, and disabling APIs can break running resources without necessarily stopping charges (e.g., storage).</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">IAM basics</span>
+    <p class="qtext">Which best describes how IAM policy inheritance works?</p>
+    <ul class="opts">
+      <li class="correct">Policies are inherited downward, and the effective policy is the union of the resource&#39;s policy and its ancestors&#39; policies<span class="tag">Correct</span></li>
+      <li>A policy set on a project overrides and removes any permissions that were granted at the organization level above it</li>
+      <li>Policies apply only at the level where they are defined and are never inherited by child resources</li>
+      <li>Child policies must be explicitly synchronized with their parent policies before they take effect</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> IAM is additive: a resource&#39;s effective policy is the union of policies set on it and everything above it, so you cannot remove an inherited grant at a lower level (deny policies are a separate, newer mechanism). Grants at higher levels therefore deserve extra care.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this domain for real</h3>
+    <p>The app has dozens more Domain 1 questions with instant scoring, spaced
+    repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=1#view-home">Start Domain 1 practice →</a>
+  </div>
+
+  <h2>Other exam domains</h2>
+  <div class="domain-grid">
+    <a href="../planning-and-configuring-a-cloud-solution/"><strong>Domain 2</strong>Planning &amp; Configuring a Cloud Solution</a>
+      <a href="../deploying-and-implementing-a-cloud-solution/"><strong>Domain 3</strong>Deploying &amp; Implementing a Cloud Solution</a>
+      <a href="../ensuring-successful-operation/"><strong>Domain 4</strong>Ensuring Successful Operation</a>
+      <a href="../configuring-access-and-security/"><strong>Domain 5</strong>Configuring Access and Security</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+  Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+</footer>
+</body>
+</html>

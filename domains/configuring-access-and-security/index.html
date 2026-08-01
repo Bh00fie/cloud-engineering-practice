@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GCP ACE Domain 5: Configuring Access and Security</title>
+<meta name="description" content="ACE exam Domain 5 study guide: IAM roles, service accounts, org policies, and data protection on Google Cloud — plus 8 free sample questions with explanations.">
+<link rel="canonical" href="https://cloudaceprep.com/domains/configuring-access-and-security/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GCP ACE Domain 5: Configuring Access and Security">
+<meta property="og:description" content="ACE exam Domain 5 study guide: IAM roles, service accounts, org policies, and data protection on Google Cloud — plus 8 free sample questions with explanations.">
+<meta property="og:url" content="https://cloudaceprep.com/domains/configuring-access-and-security/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="GCP ACE Domain 5: Configuring Access and Security">
+<meta name="twitter:description" content="ACE exam Domain 5 study guide: IAM roles, service accounts, org policies, and data protection on Google Cloud — plus 8 free sample questions with explanations.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Study guide","item":"https://cloudaceprep.com/study-guide/"},{"@type":"ListItem","position":3,"name":"Domain 5","item":"https://cloudaceprep.com/domains/configuring-access-and-security/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Quiz","name":"GCP ACE Domain 5: Configuring Access and Security — sample questions","about":{"@type":"Thing","name":"Google Cloud Associate Cloud Engineer exam — Configuring Access and Security"},"educationalAlignment":{"@type":"AlignmentObject","alignmentType":"educationalSubject","targetName":"Google Cloud Associate Cloud Engineer certification"},"hasPart":[{"@type":"Question","name":"After a phishing attempt targets your organization's admins, you harden their accounts. What is the highest-value authentication control?","acceptedAnswer":{"@type":"Answer","text":"Enforcing 2-Step Verification, ideally hardware security keys, for privileged users — Phishing-resistant 2SV (security keys) neutralizes credential theft — the dominant attack. Password-rotation-alone and shared accounts are outdated/actively harmful."}},{"@type":"Question","name":"Teams in your company have started calling Vertex AI APIs with customer data. What belongs in the baseline security review? (Choose two.)","acceptedAnswer":{"@type":"Answer","text":"IAM: who/what SAs can invoke models and access training data — AI workloads inherit standard controls: identity on APIs/data, residency/logging/de-identification for content. Same discipline, new service."}},{"@type":"Question","name":"In an access review, you explain why the basic roles in your org quietly get riskier over time. Which statement about IAM and new Google Cloud services is true?","acceptedAnswer":{"@type":"Answer","text":"Basic roles automatically include permissions of newly launched services, another reason to avoid them — predefined roles scope to known services — Owner/Editor/Viewer silently expand as Google ships services — your grant grows without review. Custom roles are static (your job to update); every service launches WITH IAM."}},{"@type":"Question","name":"You are planning your org's first quarterly access review and time is limited. What should the review focus on FIRST?","acceptedAnswer":{"@type":"Answer","text":"High-privilege grants (Owner/Editor/admin roles, SA impersonation rights) and dormant accounts/keys — Risk-ranked review: powerful roles, stale users, unused SAs/keys (IAM Recommender and Policy Analyzer help automate). Breadth matters less than catching the dangerous outliers."}},{"@type":"Question","name":"Preparing a security briefing, you must explain how Google Cloud separates audit logs for data-plane versus control-plane operations. Which two categories exist?","acceptedAnswer":{"@type":"Answer","text":"Data Access logs (reads/writes of data) and Admin Activity logs (configuration changes) — Admin Activity records configuration/metadata changes (always on); Data Access records data reads/writes (mostly opt-in, potentially voluminous). Both feed security review workflows."}},{"@type":"Question","name":"An auditor asks your team to produce Google Cloud's compliance certifications (ISO 27001, SOC, HIPAA readiness). Where do you find them?","acceptedAnswer":{"@type":"Answer","text":"The Compliance Reports Manager / compliance resource center documentation — Google publishes certifications/attestations centrally; customers inherit infrastructure compliance but remain responsible for their configuration (shared responsibility)."}},{"@type":"Question","name":"Your team is considering a custom role because no predefined role fits the need exactly. Which statement about custom roles is TRUE?","acceptedAnswer":{"@type":"Answer","text":"They can be created at project or org level, and you must maintain them as services add permissions — Custom roles are your maintenance burden (launch-stage awareness, permission drift), which is why predefined roles are preferred when they fit. Org-level customs can be reused across projects."}},{"@type":"Question","name":"Your analysts need aggregated query results from BigQuery tables that contain raw PII they must never see. What does BigQuery offer for this?","acceptedAnswer":{"@type":"Answer","text":"Authorized views/routines exposing only sanitized results, while the base tables stay restricted — Authorized views run with the view owner's access to base tables; consumers get only the view's output. Extract-and-email destroys governance; renames hide nothing."}}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../../">GCP ACE Practice</a> · <a href="../../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../../">GCP ACE Practice</a> / <a href="../../study-guide/">Study guide</a> / Domain 5</p>
+  <h1>GCP ACE Domain 5: Configuring Access and Security</h1>
+  <p class="lede">Roughly ~20% of the Google Cloud Associate Cloud Engineer exam. What it
+  actually covers, the traps to know, and 8 free sample questions with full explanations.</p>
+
+  <p>Domain 5 is IAM in depth, and IAM is arguably the single most-tested subject across the <em>whole</em> exam once you count how often it resurfaces in other domains. Know the three role types cold: <strong>basic roles</strong> (Owner, Editor, Viewer — broad, legacy, generally discouraged in production), <strong>predefined roles</strong> (service-specific, Google-maintained, the usual right answer), and <strong>custom roles</strong> (when you need a permission set no predefined role matches, at the cost of maintaining it yourself). The principle of least privilege is the thread running through nearly every correct answer in this domain.</p>
+  <p><strong>Service accounts</strong> get their own deep dive here: they're identities for workloads rather than people, they can be granted roles just like a user, and attaching a service account to a Compute Engine instance is almost always preferable to distributing a downloaded JSON key — key management (rotation, and never committing a key to source control) is a frequent exam trap. Understand impersonation and short-lived credentials as the modern alternative to long-lived keys.</p>
+  <p>Beyond IAM proper, expect <strong>organization policies</strong> (constraints applied at the org/folder/project level — e.g., restricting VM external IPs or which regions resources can be created in) and basic <strong>data protection</strong>: Google encrypts data at rest by default, Cloud KMS is how you manage your own encryption keys (customer-managed encryption keys, CMEK) when default encryption isn't enough, and Cloud Audit Logs record who did what, when — Admin Activity logs are on and cannot be disabled; Data Access logs mostly have to be turned on deliberately.</p>
+
+  <div class="card">
+    <h3>Exam tips for this domain</h3>
+    <ul>
+      <li>Predefined roles are the default correct answer whenever one fits; basic roles (Owner/Editor/Viewer) are almost always the wrong, over-broad choice in a security-focused question.</li>
+      <li>Prefer attaching a service account to the resource that needs it over downloading and distributing a long-lived JSON key — key-handling questions test exactly this instinct.</li>
+      <li>Admin Activity audit logs are always on and can&#39;t be turned off; Data Access audit logs (except for BigQuery) are off by default and must be enabled — a frequently-tested distinction.</li>
+    </ul>
+  </div>
+
+  <h2>Sample questions — Domain 5</h2>
+  <p>These 8 questions are drawn from our full bank of 658 to show the style and
+  depth you'll get in the app. Each comes with the full explanation you'd see after answering
+  in a real practice session.</p>
+  <div class="card q-card">
+    <span class="topic">2FA</span>
+    <p class="qtext">After a phishing attempt targets your organization&#39;s admins, you harden their accounts. What is the highest-value authentication control?</p>
+    <ul class="opts">
+      <li class="correct">Enforcing 2-Step Verification, ideally hardware security keys, for privileged users<span class="tag">Correct</span></li>
+      <li>Longer usernames</li>
+      <li>Monthly password rotation only</li>
+      <li>Shared admin accounts so fewer passwords exist</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Phishing-resistant 2SV (security keys) neutralizes credential theft — the dominant attack. Password-rotation-alone and shared accounts are outdated/actively harmful.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">AI security</span>
+    <p class="qtext">Teams in your company have started calling Vertex AI APIs with customer data. What belongs in the baseline security review? (Choose two.)</p>
+    <ul class="opts">
+      <li class="correct">IAM: who/what SAs can invoke models and access training data<span class="tag">Correct</span></li>
+      <li class="correct">Data governance: residency of data used, logging of access, DLP where PII flows<span class="tag">Correct</span></li>
+      <li>Whether the model likes the data</li>
+      <li>GPU color</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> AI workloads inherit standard controls: identity on APIs/data, residency/logging/de-identification for content. Same discipline, new service.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Access</span>
+    <p class="qtext">In an access review, you explain why the basic roles in your org quietly get riskier over time. Which statement about IAM and new Google Cloud services is true?</p>
+    <ul class="opts">
+      <li class="correct">Basic roles automatically include permissions of newly launched services, another reason to avoid them — predefined roles scope to known services<span class="tag">Correct</span></li>
+      <li>Basic roles never gain permissions</li>
+      <li>Custom roles auto-update</li>
+      <li>New services have no IAM</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Owner/Editor/Viewer silently expand as Google ships services — your grant grows without review. Custom roles are static (your job to update); every service launches WITH IAM.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Access review</span>
+    <p class="qtext">You are planning your org&#39;s first quarterly access review and time is limited. What should the review focus on FIRST?</p>
+    <ul class="opts">
+      <li class="correct">High-privilege grants (Owner/Editor/admin roles, SA impersonation rights) and dormant accounts/keys<span class="tag">Correct</span></li>
+      <li>Every user in alphabetical order, for complete coverage</li>
+      <li>New hires from the last quarter, since access changes most for them</li>
+      <li>Viewer-level grants, which are the most numerous</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Risk-ranked review: powerful roles, stale users, unused SAs/keys (IAM Recommender and Policy Analyzer help automate). Breadth matters less than catching the dangerous outliers.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Audit logs</span>
+    <p class="qtext">Preparing a security briefing, you must explain how Google Cloud separates audit logs for data-plane versus control-plane operations. Which two categories exist?</p>
+    <ul class="opts">
+      <li class="correct">Data Access logs (reads/writes of data) and Admin Activity logs (configuration changes)<span class="tag">Correct</span></li>
+      <li>Platform logs and workload logs, split by where they originate</li>
+      <li>Network logs and compute logs, split by service family</li>
+      <li>Paid and unpaid logs</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Admin Activity records configuration/metadata changes (always on); Data Access records data reads/writes (mostly opt-in, potentially voluminous). Both feed security review workflows.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Compliance</span>
+    <p class="qtext">An auditor asks your team to produce Google Cloud&#39;s compliance certifications (ISO 27001, SOC, HIPAA readiness). Where do you find them?</p>
+    <ul class="opts">
+      <li class="correct">The Compliance Reports Manager / compliance resource center documentation<span class="tag">Correct</span></li>
+      <li>The audit logs of your own projects</li>
+      <li>The quota page of each service</li>
+      <li>The Trust &amp; Security section of Cloud Marketplace listings</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Google publishes certifications/attestations centrally; customers inherit infrastructure compliance but remain responsible for their configuration (shared responsibility).</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Custom roles</span>
+    <p class="qtext">Your team is considering a custom role because no predefined role fits the need exactly. Which statement about custom roles is TRUE?</p>
+    <ul class="opts">
+      <li class="correct">They can be created at project or org level, and you must maintain them as services add permissions<span class="tag">Correct</span></li>
+      <li>Google updates their permission lists automatically</li>
+      <li>They can include permissions from other clouds</li>
+      <li>They&#39;re always safer than predefined roles</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Custom roles are your maintenance burden (launch-stage awareness, permission drift), which is why predefined roles are preferred when they fit. Org-level customs can be reused across projects.</div>
+  </div>
+  <div class="card q-card">
+    <span class="topic">Data governance</span>
+    <p class="qtext">Your analysts need aggregated query results from BigQuery tables that contain raw PII they must never see. What does BigQuery offer for this?</p>
+    <ul class="opts">
+      <li class="correct">Authorized views/routines exposing only sanitized results, while the base tables stay restricted<span class="tag">Correct</span></li>
+      <li>Emailing CSV extracts</li>
+      <li>Renaming columns</li>
+      <li>Trusting the analysts</li>
+    </ul>
+    <div class="explain"><strong>Why:</strong> Authorized views run with the view owner&#39;s access to base tables; consumers get only the view&#39;s output. Extract-and-email destroys governance; renames hide nothing.</div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <h3>Practice this domain for real</h3>
+    <p>The app has dozens more Domain 5 questions with instant scoring, spaced
+    repetition of what you get wrong, and progress tracking across sessions.</p>
+    <a class="cta" href="../../?domain=5#view-home">Start Domain 5 practice →</a>
+  </div>
+
+  <h2>Other exam domains</h2>
+  <div class="domain-grid">
+    <a href="../setting-up-a-cloud-solution-environment/"><strong>Domain 1</strong>Setting Up a Cloud Solution Environment</a>
+      <a href="../planning-and-configuring-a-cloud-solution/"><strong>Domain 2</strong>Planning &amp; Configuring a Cloud Solution</a>
+      <a href="../deploying-and-implementing-a-cloud-solution/"><strong>Domain 3</strong>Deploying &amp; Implementing a Cloud Solution</a>
+      <a href="../ensuring-successful-operation/"><strong>Domain 4</strong>Ensuring Successful Operation</a>
+  </div>
+</div>
+<footer class="site-footer">
+  <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+  Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+</footer>
+</body>
+</html>
