@@ -203,6 +203,11 @@ function renderQuestion() {
   document.getElementById("q-check").hidden = false;
   document.getElementById("q-check").disabled = true;
   document.getElementById("q-next").hidden = true;
+  // Ads stay off while a question is in progress — see the placement note on
+  // #quiz-ad-slot in index.html. Re-hidden every question; checkAnswer()
+  // reveals it only once feedback is on screen.
+  const quizAdSlot = document.getElementById("quiz-ad-slot");
+  if (quizAdSlot) quizAdSlot.hidden = true;
 
   const box = document.getElementById("q-options");
   box.innerHTML = "";
@@ -285,6 +290,15 @@ function checkAnswer() {
   next.hidden = false;
   next.textContent = quiz.i === quiz.qs.length - 1 ? "Finish" : "Next";
   next.focus();
+
+  // Now that feedback is showing and options are locked, this is the one
+  // acceptable moment to surface a quiz-flow ad (see placement note in
+  // index.html). No-op whenever ads aren't configured/consented.
+  const quizAdSlot = document.getElementById("quiz-ad-slot");
+  if (quizAdSlot) {
+    quizAdSlot.hidden = false;
+    window.AdsBridge?.reveal(quizAdSlot);
+  }
 }
 
 function nextQuestion() {
@@ -391,6 +405,13 @@ function finishQuiz(partial) {
   renderResultsBreakdown(quiz.byDomain, quiz.mode);
   document.getElementById("r-again").hidden = quiz.mode === "domain";
   layoutAuthForResults();
+
+  // Results is the highest-intent moment for the reserved promo slot — see
+  // the placement note on #results-promo-slot in index.html. It's inside a
+  // hidden view until now, so it was never eligible for activateVisibleSlots()
+  // at page load; reveal it here instead. No-op whenever ads aren't
+  // configured/consented.
+  window.AdsBridge?.reveal(document.getElementById("results-promo-slot"));
 
   quiz = null;
   show("view-results");

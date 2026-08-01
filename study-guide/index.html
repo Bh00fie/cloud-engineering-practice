@@ -42,6 +42,8 @@
     <tr><th>Delivery</th><td>Remote-proctored online or at a test center</td></tr>
   </table>
 
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
   <h2>The five exam domains</h2>
   <p>Each domain below links to a dedicated page with real study content and free sample
   questions with explanations — not just a list of topics.</p>
@@ -78,8 +80,15 @@
   </div>
 </div>
 <footer class="site-footer">
-  <a href="../">GCP ACE Practice</a> — free practice questions and explanations for the
-  Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  <div class="footer-links">
+    <a href="../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
 </footer>
+<!-- Ad config + loader — inert (no script requests, no DOM insertion) while
+     ADS_CONFIG.ADSENSE_CLIENT is empty, which is the committed default. -->
+<script defer src="../ads-config.js"></script>
+<script defer src="../ads.js"></script>
 </body>
 </html>

@@ -334,6 +334,43 @@
   .promo-slot:not(:empty) { display: block; margin-bottom: 14px; }
   .results-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
+  /* ---------------------------------------------------------------- ads */
+  /* Ad containers are inert markup until ads.js decides (config + consent +
+     not-a-standalone-PWA) to insert an <ins> — :empty keeps them fully
+     collapsed (zero height, no visual footprint) until that happens, so the
+     page looks identical to today whenever no publisher ID is configured. */
+  .ad-slot:empty { display: none; }
+  .ad-slot[hidden] { display: none !important; }
+  .ad-slot .ad-label {
+    font-size: 11px; color: var(--ink-3); text-transform: uppercase;
+    letter-spacing: 0.04em; margin-bottom: 6px;
+  }
+  /* Reserves space the instant the unit is inserted (before the creative
+     itself loads) so the surrounding layout doesn't shift — see the CLS
+     note in README.md. */
+  .ad-slot ins.adsbygoogle { display: block; min-height: 250px; }
+
+  .consent-banner {
+    position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 60; max-width: 640px; margin: 0 auto;
+    background: var(--surface-1); color: var(--ink-1); border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md); box-shadow: var(--shadow-lg); padding: 14px 16px; font-size: 13px;
+  }
+  .consent-banner p { margin: 0 0 10px; }
+  .consent-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+  .link-btn {
+    background: none; border: none; padding: 0; color: var(--accent);
+    font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline;
+  }
+
+  .site-footer {
+    max-width: 980px; margin: 24px auto 0; padding: 16px 24px calc(16px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border); font-size: 12.5px; color: var(--ink-3);
+  }
+  .site-footer a { color: var(--ink-3); }
+  .site-footer .footer-links { margin-bottom: 4px; }
+
   table { border-collapse: collapse; width: 100%; font-size: 14px; }
   th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--grid); }
   th { color: var(--ink-2); font-weight: 600; font-size: 13px; }
@@ -568,6 +605,11 @@
       </div>
     </div>
 
+    <!-- Home-screen ad slot: below the fold, below every practice CTA and the
+         study guides — see ads.js. Collapses to zero height (.ad-slot:empty)
+         until a client ID + consent + a "home" slot ID are all configured. -->
+    <div class="card ad-slot" id="home-ad-slot" data-ad-name="home"></div>
+
     <div class="card footer-tools">
       <button onclick="exportProgress()">Export progress</button>
       <button onclick="document.getElementById('import-file').click()">Import progress</button>
@@ -608,6 +650,15 @@
       </div>
     </div>
 
+    <!-- Quiz-flow ad slot: intentionally the ONLY ad-eligible spot inside the
+         quiz view, and only ever shown after an answer is checked (feedback
+         already on screen, options already locked) — never while a question
+         is in progress. renderQuestion()/checkAnswer() in app.js toggle
+         `hidden`; ads.js fills it lazily via AdsBridge.reveal() the first
+         time it's shown, so no ad is requested for a question the visitor
+         hasn't finished answering yet. -->
+    <div class="card ad-slot" id="quiz-ad-slot" data-ad-name="quizFeedback" hidden></div>
+
     <div class="card chat-card">
       <h2>Not sure what a term means? Ask.</h2>
       <div class="chat-log" id="chat-log" hidden></div>
@@ -647,10 +698,12 @@
       <div id="r-save-card-inner"></div>
     </div>
 
-    <!-- PROMO SLOT: affiliate/ad unit goes here. Leave empty until a dedicated pass wires
-         up content — .promo-slot collapses to zero height while empty (see CSS above),
-         so it is invisible on the live site until populated. -->
-    <div class="card promo-slot" id="results-promo-slot"></div>
+    <!-- PROMO SLOT: ad unit goes here — the highest-intent moment on the site.
+         Revealed lazily by finishQuiz() in app.js (via AdsBridge.reveal), which
+         also matches the results screen being hidden until a quiz finishes.
+         .promo-slot/.ad-slot both collapse to zero height while empty, so this
+         stays invisible whenever no publisher ID + slot + consent are configured. -->
+    <div class="card promo-slot ad-slot" id="results-promo-slot" data-ad-name="results"></div>
 
     <div class="results-actions">
       <button class="primary" id="r-weakest-cta" onclick="practiceWeakestDomain()" hidden></button>
@@ -659,6 +712,13 @@
     </div>
   </section>
 </main>
+
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span>
+  </div>
+  <p>GCP ACE Practice is an independent study tool and is not affiliated with or endorsed by Google.</p>
+</footer>
 
 <div id="tooltip"></div>
 
@@ -685,5 +745,10 @@
 <script defer src="app.js"></script>
 <script defer src="firebase-config.js"></script>
 <script type="module" src="auth.js"></script>
+<!-- Ad config + loader — see ads-config.js for the master on/off switch.
+     Both are inert (no script requests, no DOM insertion) while
+     ADS_CONFIG.ADSENSE_CLIENT is empty, which is the committed default. -->
+<script defer src="ads-config.js"></script>
+<script defer src="ads.js"></script>
 </body>
 </html>

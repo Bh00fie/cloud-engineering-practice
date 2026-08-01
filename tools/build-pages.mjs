@@ -315,12 +315,25 @@ ${(Array.isArray(jsonLd) ? jsonLd : [jsonLd]).map((j) => `<script type="applicat
 
 const FOOTER = (depth) => `</div>
 <footer class="site-footer">
-  <a href="${depth}">${esc(SITE_NAME)}</a> — free practice questions and explanations for the
-  Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  <div class="footer-links">
+    <a href="${depth}">${esc(SITE_NAME)}</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
 </footer>
+<!-- Ad config + loader — inert (no script requests, no DOM insertion) while
+     ADS_CONFIG.ADSENSE_CLIENT is empty, which is the committed default. -->
+<script defer src="${depth}ads-config.js"></script>
+<script defer src="${depth}ads.js"></script>
 </body>
 </html>
 `;
+
+// One in-content ad placement per generated content page — inserted between
+// two natural sections (never inside a card that looks like navigation/UI).
+// Collapses to nothing (see .ad-slot:empty in styles/pages.css) unless a
+// publisher ID, a "contentPage" slot ID, and visitor consent are all present.
+const CONTENT_AD_SLOT = `<div class="ad-slot" data-ad-name="contentPage"></div>`;
 
 function renderQuestionCard(q) {
   const correctSet = new Set(Array.isArray(q.a) ? q.a : [q.a]);
@@ -409,6 +422,8 @@ function buildDomainPage(domain, samples) {
       ${domain.tips.map((t) => `<li>${esc(t)}</li>`).join("\n      ")}
     </ul>
   </div>
+
+  ${CONTENT_AD_SLOT}
 
   <h2>Sample questions — Domain ${domain.num}</h2>
   <p>These ${samples.length} questions are drawn from our full bank of 658 to show the style and
@@ -501,6 +516,8 @@ function buildStudyGuidePage() {
     <tr><th>Delivery</th><td>Remote-proctored online or at a test center</td></tr>
   </table>
 
+  ${CONTENT_AD_SLOT}
+
   <h2>The five exam domains</h2>
   <p>Each domain below links to a dedicated page with real study content and free sample
   questions with explanations — not just a list of topics.</p>
@@ -527,6 +544,192 @@ function buildStudyGuidePage() {
 }
 
 // ---------------------------------------------------------------------------
+// 3b. About / Privacy / Contact — required for AdSense review, and honest
+//     regardless of whether the AdSense application is ever approved.
+// ---------------------------------------------------------------------------
+
+function buildAboutPage() {
+  const canonicalPath = "/about/";
+  const breadcrumb = breadcrumbJsonLd([
+    { name: SITE_NAME, url: `${SITE_URL}/` },
+    { name: "About", url: `${SITE_URL}${canonicalPath}` },
+  ]);
+  const head = pageHead({
+    title: `About — ${SITE_NAME}`,
+    description: "About GCP ACE Practice: a free, independent Associate Cloud Engineer practice tool with original questions — not exam dumps.",
+    canonicalPath,
+    jsonLd: breadcrumb,
+    rootRelPrefix: "../",
+  });
+  const body = `
+  <p class="crumbs"><a href="../">${esc(SITE_NAME)}</a> / About</p>
+  <h1>About ${esc(SITE_NAME)}</h1>
+  <p class="lede">A free, independent study tool for the Google Cloud Associate Cloud Engineer exam.</p>
+
+  <h2>What this is</h2>
+  <p>${esc(SITE_NAME)} is a self-contained practice app: 658 multiple-choice and multiple-select
+  questions across the exam's five official domains, each with a full written explanation, a
+  120-minute mock exam that mirrors the real exam's domain weighting, and free progress tracking.
+  There's no paywall and no account requirement to start practicing.</p>
+
+  <h2>About the questions</h2>
+  <p><strong>Every question on this site is original</strong> — written for this app, modeled on
+  the topic list in Google's own
+  <a href="https://services.google.com/fh/files/misc/associate_cloud_engineer_exam_guide_english.pdf">official exam guide</a>
+  and on publicly available Google Cloud documentation. They are <strong>not exam dumps</strong>:
+  nothing here reproduces real, leaked, or "actual" exam questions, which would violate the
+  certification's terms and defeat the point of studying in the first place. The goal is to build
+  the same understanding the real exam tests, not to memorize its answer key.</p>
+
+  <h2>Who runs this</h2>
+  <p>${esc(SITE_NAME)} is an independent project and is not affiliated with, endorsed by, or
+  sponsored by Google. "Google Cloud" and "Associate Cloud Engineer" are trademarks of Google LLC;
+  they're used here only to describe what this site helps you study for.</p>
+
+  <div class="card" style="text-align:center">
+    <h3>Questions or found a mistake?</h3>
+    <p>See the <a href="../contact/">Contact page</a> — corrections to questions are always welcome.</p>
+  </div>
+`;
+  return head + body + FOOTER("../");
+}
+
+function buildContactPage() {
+  const canonicalPath = "/contact/";
+  const breadcrumb = breadcrumbJsonLd([
+    { name: SITE_NAME, url: `${SITE_URL}/` },
+    { name: "Contact", url: `${SITE_URL}${canonicalPath}` },
+  ]);
+  const head = pageHead({
+    title: `Contact — ${SITE_NAME}`,
+    description: "Get in touch about GCP ACE Practice: question corrections, feedback, or privacy requests.",
+    canonicalPath,
+    jsonLd: breadcrumb,
+    rootRelPrefix: "../",
+  });
+  // TODO(owner): replace the placeholder address below with a real inbox
+  // before going live with ads — AdSense reviewers check that this resolves
+  // to something real, and visitors need a way to reach you for privacy
+  // requests (see privacy/index.html).
+  const body = `
+  <p class="crumbs"><a href="../">${esc(SITE_NAME)}</a> / Contact</p>
+  <h1>Contact</h1>
+  <p class="lede">Questions, corrections to a practice question, or a privacy request — all welcome.</p>
+
+  <div class="card">
+    <h3>Email</h3>
+    <p><a href="mailto:TODO-owner-email@example.com">TODO-owner-email@example.com</a></p>
+    <p style="color:var(--ink-3);font-size:13px">
+      <strong>TODO (site owner):</strong> replace this placeholder with a real inbox before
+      submitting the AdSense application — reviewers check that a contact address actually works.
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>Found a wrong or outdated question?</h3>
+    <p>Cloud products change; if a question is out of date or you think an answer is wrong, include
+    the question text (or its topic) in your email and it'll be reviewed.</p>
+  </div>
+
+  <div class="card">
+    <h3>Privacy requests</h3>
+    <p>To access, export, or delete data associated with an account, see the
+    <a href="../privacy/">privacy policy</a> for the quickest self-service options (in-app
+    export/delete), or email the address above.</p>
+  </div>
+`;
+  return head + body + FOOTER("../");
+}
+
+function buildPrivacyPage() {
+  const canonicalPath = "/privacy/";
+  const breadcrumb = breadcrumbJsonLd([
+    { name: SITE_NAME, url: `${SITE_URL}/` },
+    { name: "Privacy", url: `${SITE_URL}${canonicalPath}` },
+  ]);
+  const head = pageHead({
+    title: `Privacy Policy — ${SITE_NAME}`,
+    description: "Privacy policy for GCP ACE Practice: cookies, Google AdSense, Firebase Authentication and Firestore data, the Gemini-powered chat feature, and opt-out options.",
+    canonicalPath,
+    jsonLd: breadcrumb,
+    rootRelPrefix: "../",
+  });
+  const body = `
+  <p class="crumbs"><a href="../">${esc(SITE_NAME)}</a> / Privacy</p>
+  <h1>Privacy Policy</h1>
+  <p class="lede">Last updated ${BUILD_DATE}. Plain-language summary: this site stores your quiz
+  progress, optionally syncs it to the cloud if you create an account, and may show ads to keep
+  the app free. Details below.</p>
+
+  <h2>What's stored, and where</h2>
+  <p><strong>Progress data (guest mode).</strong> If you never create an account, your quiz
+  history — which questions you've seen, right/wrong counts, session scores — is stored only in
+  your browser's <code>localStorage</code>. It never leaves your device. Clearing your browser's
+  site data deletes it; the "Export progress" button on the home screen lets you back it up
+  yourself first.</p>
+  <p><strong>Account data (signed in).</strong> Creating an account uses
+  <strong>Firebase Authentication</strong> (Google) for email/password sign-in, and your progress
+  additionally syncs to <strong>Cloud Firestore</strong> (also Google), scoped to your account by
+  server-side security rules so only you can read or write it. We store your email address and the
+  same progress data described above — nothing else. Signing out clears the local copy on that
+  device; the cloud copy remains until you request deletion (see Contact).</p>
+  <p><strong>Chat feature.</strong> The in-quiz "Ask" chat sends your typed question (and the text
+  of the practice question you're viewing, so it can answer in context) to Google's
+  <strong>Gemini API</strong> via a server-side proxy — your message isn't tied to your account or
+  stored by this site beyond the current session in your browser tab.</p>
+  <p><strong>Analytics.</strong> This site does not currently run any separate analytics or
+  tracking script beyond what's described above.</p>
+
+  <h2>Cookies and similar technology</h2>
+  <p>Firebase Authentication uses cookies/local storage to keep you signed in. If ads are active
+  on this site (see below), Google AdSense and its partners may set cookies to serve and measure
+  ads, including for personalization. A consent notice governs whether those ad cookies are set —
+  see "Ads and consent" below.</p>
+
+  <h2>Ads and consent</h2>
+  <p>${esc(SITE_NAME)} may display ads served by <strong>Google AdSense</strong>. When active,
+  AdSense and its advertising partners can use cookies and similar technology (including the
+  DoubleClick/Google Ads cookie) to serve ads and measure their performance, and — if you consent —
+  to personalize which ads you see based on your visits to this and other sites.</p>
+  <p>Before any ad cookie is set, this site shows an on-site notice where you can
+  <strong>Accept</strong> or choose <strong>Necessary only</strong>; your choice is remembered in
+  your browser (localStorage) and no ad script loads until you accept. You can change your mind
+  any time via the "Cookie preferences" link in the footer.</p>
+  <p>You can also control ad personalization directly with Google at
+  <a href="https://adssettings.google.com/">adssettings.google.com</a>, and general opt-outs are
+  available through the <a href="https://optout.networkadvertising.org/">Network Advertising
+  Initiative</a> and <a href="https://optout.aboutads.info/">DAA WebChoices</a> tools. Most
+  browsers also let you block third-party cookies entirely.</p>
+  <p style="color:var(--ink-2)"><strong>Note on the EEA/UK:</strong> the on-site notice above is a
+  simple accept/decline gate, not a certified Consent Management Platform (CMP). If personalized
+  advertising to EEA/UK visitors is ever enabled, it will go through a Google-certified CMP as
+  required by Google's EU user consent policy and the IAB Transparency & Consent Framework — until
+  then, ad personalization for those visitors is not enabled regardless of the on-site choice
+  above.</p>
+
+  <h2>Your choices</h2>
+  <ul>
+    <li>Practice fully anonymously — an account is never required.</li>
+    <li>Export or delete your local progress any time from the home screen.</li>
+    <li>Decline ad cookies via the consent notice or "Cookie preferences" in the footer.</li>
+    <li>Request deletion of your cloud account data — see <a href="../contact/">Contact</a>.</li>
+  </ul>
+
+  <h2>Children's privacy</h2>
+  <p>This site is intended for adults studying for a professional certification and is not
+  directed at children under 13.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If what this site collects or how ads are configured changes, this page will be updated and
+  the "last updated" date above will change.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about this policy or a privacy request — see <a href="../contact/">Contact</a>.</p>
+`;
+  return head + body + FOOTER("../");
+}
+
+// ---------------------------------------------------------------------------
 // 4. Sitemap + robots.txt
 // ---------------------------------------------------------------------------
 
@@ -535,6 +738,9 @@ function buildSitemap() {
     { loc: `${SITE_URL}/`, priority: "1.0" },
     { loc: `${SITE_URL}/study-guide/`, priority: "0.9" },
     ...DOMAINS.map((d) => ({ loc: `${SITE_URL}/domains/${d.slug}/`, priority: "0.8" })),
+    { loc: `${SITE_URL}/about/`, priority: "0.4" },
+    { loc: `${SITE_URL}/privacy/`, priority: "0.3" },
+    { loc: `${SITE_URL}/contact/`, priority: "0.3" },
   ];
   const body = urls
     .map((u) => `  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${BUILD_DATE}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`)
@@ -551,6 +757,44 @@ Disallow: /netlify/
 Disallow: /tools/
 
 Sitemap: ${SITE_URL}/sitemap.xml
+`;
+}
+
+// ---------------------------------------------------------------------------
+// 4b. ads.txt — regenerated from ads-config.js so the publisher ID only ever
+//     needs to be entered in one place. Meaningless (and harmless) until the
+//     AdSense application is approved and ADSENSE_CLIENT is filled in.
+// ---------------------------------------------------------------------------
+
+function loadAdsConfig() {
+  const file = path.join(ROOT, "ads-config.js");
+  const sandbox = { window: {} };
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(file, "utf8"), sandbox, { filename: "ads-config.js" });
+  return sandbox.window.ADS_CONFIG || { ADSENSE_CLIENT: "" };
+}
+
+function buildAdsTxt(adsConfig) {
+  const clientId = String(adsConfig.ADSENSE_CLIENT || "").trim();
+  if (!clientId) {
+    return `# ads.txt — placeholder.
+#
+# ${SITE_NAME} has not yet been approved for Google AdSense, so there is no
+# publisher ID to declare. This file exists so the URL resolves (some ad
+# systems treat a missing ads.txt as a red flag) but currently authorizes no
+# sellers.
+#
+# Once AdSense approves the site: fill in ADSENSE_CLIENT in ads-config.js and
+# re-run \`node tools/build-pages.mjs\` — it will regenerate this file with
+# the standard line:
+#   google.com, pub-<your-id>, DIRECT, f08c47fec0942fa0
+`;
+  }
+  const pubId = clientId.replace(/^ca-/, "");
+  return `# ads.txt — authorizes Google AdSense to sell ad inventory on ${SITE_URL}
+# Generated from ads-config.js by tools/build-pages.mjs — edit ADSENSE_CLIENT
+# there, not this file directly.
+google.com, ${pubId}, DIRECT, f08c47fec0942fa0
 `;
 }
 
@@ -636,8 +880,12 @@ function main() {
   }
 
   write("study-guide/index.html", buildStudyGuidePage());
+  write("about/index.html", buildAboutPage());
+  write("privacy/index.html", buildPrivacyPage());
+  write("contact/index.html", buildContactPage());
   write("sitemap.xml", buildSitemap());
   write("robots.txt", buildRobots());
+  write("ads.txt", buildAdsTxt(loadAdsConfig()));
   patchIndexHtml();
 
   console.log(`\nDone. Loaded ${bank.length} questions, sampled ${SAMPLES_PER_DOMAIN} per domain.`);

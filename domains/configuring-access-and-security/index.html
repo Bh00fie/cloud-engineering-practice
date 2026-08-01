@@ -44,6 +44,8 @@
     </ul>
   </div>
 
+  <div class="ad-slot" data-ad-name="contentPage"></div>
+
   <h2>Sample questions — Domain 5</h2>
   <p>These 8 questions are drawn from our full bank of 658 to show the style and
   depth you'll get in the app. Each comes with the full explanation you'd see after answering
@@ -153,8 +155,15 @@
   </div>
 </div>
 <footer class="site-footer">
-  <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
-  Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  <div class="footer-links">
+    <a href="../../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
 </footer>
+<!-- Ad config + loader — inert (no script requests, no DOM insertion) while
+     ADS_CONFIG.ADSENSE_CLIENT is empty, which is the committed default. -->
+<script defer src="../../ads-config.js"></script>
+<script defer src="../../ads.js"></script>
 </body>
 </html>

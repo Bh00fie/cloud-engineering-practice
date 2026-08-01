@@ -126,3 +126,35 @@ footer.site-footer {
 footer.site-footer a { color: var(--ink-3); }
 .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 0; }
 .pill { font-size: 12px; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--ink-1); }
+
+/* ------------------------------------------------------------------- ads */
+/* Same collapse-while-empty pattern as index.html's .promo-slot/.ad-slot —
+   see ads.js. Stays zero-height and invisible until a publisher ID + slot ID
+   + visitor consent are all in place. */
+.ad-slot:empty { display: none; }
+.ad-slot .ad-label {
+  font-size: 11px; color: var(--ink-3); text-transform: uppercase;
+  letter-spacing: 0.04em; margin-bottom: 6px;
+}
+.ad-slot ins.adsbygoogle { display: block; min-height: 250px; }
+
+.consent-banner {
+  position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 60;
+  max-width: 640px; margin: 0 auto;
+  background: var(--surface-1); color: var(--ink-1); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: 14px 16px; font-size: 13px;
+}
+.consent-banner p { margin: 0 0 10px; }
+.consent-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.consent-banner button {
+  font: inherit; font-size: 13px; padding: 7px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--surface-1); color: var(--ink-1); cursor: pointer;
+}
+.consent-banner button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+.link-btn {
+  background: none; border: none; padding: 0; color: var(--accent);
+  font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline;
+}
+
+footer.site-footer .footer-links { margin-bottom: 4px; }

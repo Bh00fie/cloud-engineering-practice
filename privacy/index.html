@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy — GCP ACE Practice</title>
+<meta name="description" content="Privacy policy for GCP ACE Practice: cookies, Google AdSense, Firebase Authentication and Firestore data, the Gemini-powered chat feature, and opt-out options.">
+<link rel="canonical" href="https://cloudaceprep.com/privacy/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Privacy Policy — GCP ACE Practice">
+<meta property="og:description" content="Privacy policy for GCP ACE Practice: cookies, Google AdSense, Firebase Authentication and Firestore data, the Gemini-powered chat feature, and opt-out options.">
+<meta property="og:url" content="https://cloudaceprep.com/privacy/">
+<meta property="og:site_name" content="GCP ACE Practice">
+<meta property="og:image" content="https://cloudaceprep.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Privacy Policy — GCP ACE Practice">
+<meta name="twitter:description" content="Privacy policy for GCP ACE Practice: cookies, Google AdSense, Firebase Authentication and Firestore data, the Gemini-powered chat feature, and opt-out options.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../styles/pages.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GCP ACE Practice","item":"https://cloudaceprep.com/"},{"@type":"ListItem","position":2,"name":"Privacy","item":"https://cloudaceprep.com/privacy/"}]}</script>
+</head>
+<body>
+<nav class="site-nav"><a href="../">GCP ACE Practice</a> · <a href="../study-guide/">Study guide</a></nav>
+<div class="wrap">
+  <p class="crumbs"><a href="../">GCP ACE Practice</a> / Privacy</p>
+  <h1>Privacy Policy</h1>
+  <p class="lede">Last updated 2026-08-01. Plain-language summary: this site stores your quiz
+  progress, optionally syncs it to the cloud if you create an account, and may show ads to keep
+  the app free. Details below.</p>
+
+  <h2>What's stored, and where</h2>
+  <p><strong>Progress data (guest mode).</strong> If you never create an account, your quiz
+  history — which questions you've seen, right/wrong counts, session scores — is stored only in
+  your browser's <code>localStorage</code>. It never leaves your device. Clearing your browser's
+  site data deletes it; the "Export progress" button on the home screen lets you back it up
+  yourself first.</p>
+  <p><strong>Account data (signed in).</strong> Creating an account uses
+  <strong>Firebase Authentication</strong> (Google) for email/password sign-in, and your progress
+  additionally syncs to <strong>Cloud Firestore</strong> (also Google), scoped to your account by
+  server-side security rules so only you can read or write it. We store your email address and the
+  same progress data described above — nothing else. Signing out clears the local copy on that
+  device; the cloud copy remains until you request deletion (see Contact).</p>
+  <p><strong>Chat feature.</strong> The in-quiz "Ask" chat sends your typed question (and the text
+  of the practice question you're viewing, so it can answer in context) to Google's
+  <strong>Gemini API</strong> via a server-side proxy — your message isn't tied to your account or
+  stored by this site beyond the current session in your browser tab.</p>
+  <p><strong>Analytics.</strong> This site does not currently run any separate analytics or
+  tracking script beyond what's described above.</p>
+
+  <h2>Cookies and similar technology</h2>
+  <p>Firebase Authentication uses cookies/local storage to keep you signed in. If ads are active
+  on this site (see below), Google AdSense and its partners may set cookies to serve and measure
+  ads, including for personalization. A consent notice governs whether those ad cookies are set —
+  see "Ads and consent" below.</p>
+
+  <h2>Ads and consent</h2>
+  <p>GCP ACE Practice may display ads served by <strong>Google AdSense</strong>. When active,
+  AdSense and its advertising partners can use cookies and similar technology (including the
+  DoubleClick/Google Ads cookie) to serve ads and measure their performance, and — if you consent —
+  to personalize which ads you see based on your visits to this and other sites.</p>
+  <p>Before any ad cookie is set, this site shows an on-site notice where you can
+  <strong>Accept</strong> or choose <strong>Necessary only</strong>; your choice is remembered in
+  your browser (localStorage) and no ad script loads until you accept. You can change your mind
+  any time via the "Cookie preferences" link in the footer.</p>
+  <p>You can also control ad personalization directly with Google at
+  <a href="https://adssettings.google.com/">adssettings.google.com</a>, and general opt-outs are
+  available through the <a href="https://optout.networkadvertising.org/">Network Advertising
+  Initiative</a> and <a href="https://optout.aboutads.info/">DAA WebChoices</a> tools. Most
+  browsers also let you block third-party cookies entirely.</p>
+  <p style="color:var(--ink-2)"><strong>Note on the EEA/UK:</strong> the on-site notice above is a
+  simple accept/decline gate, not a certified Consent Management Platform (CMP). If personalized
+  advertising to EEA/UK visitors is ever enabled, it will go through a Google-certified CMP as
+  required by Google's EU user consent policy and the IAB Transparency & Consent Framework — until
+  then, ad personalization for those visitors is not enabled regardless of the on-site choice
+  above.</p>
+
+  <h2>Your choices</h2>
+  <ul>
+    <li>Practice fully anonymously — an account is never required.</li>
+    <li>Export or delete your local progress any time from the home screen.</li>
+    <li>Decline ad cookies via the consent notice or "Cookie preferences" in the footer.</li>
+    <li>Request deletion of your cloud account data — see <a href="../contact/">Contact</a>.</li>
+  </ul>
+
+  <h2>Children's privacy</h2>
+  <p>This site is intended for adults studying for a professional certification and is not
+  directed at children under 13.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If what this site collects or how ads are configured changes, this page will be updated and
+  the "last updated" date above will change.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about this policy or a privacy request — see <a href="../contact/">Contact</a>.</p>
+</div>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="../">GCP ACE Practice</a> — free practice questions and explanations for the
+    Google Cloud Associate Cloud Engineer exam. Not affiliated with Google.
+  </div>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a><span id="cookie-prefs-slot"></span></p>
+</footer>
+<!-- Ad config + loader — inert (no script requests, no DOM insertion) while
+     ADS_CONFIG.ADSENSE_CLIENT is empty, which is the committed default. -->
+<script defer src="../ads-config.js"></script>
+<script defer src="../ads.js"></script>
+</body>
+</html>
