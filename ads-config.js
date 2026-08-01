@@ -25,10 +25,10 @@ window.ADS_CONFIG = {
   // left "" simply never renders, even once ADSENSE_CLIENT is filled in —
   // so units can be turned on one at a time.
   SLOTS: {
-    home: "4484411154",    // home screen, below the fold ("frontpage" unit)
-    quizFeedback: "",      // quiz screen, only after an answer is checked
-    results: "9764657993", // results screen — the reserved #results-promo-slot ("Side by side" unit)
-    contentPage: "",       // domains/* and study-guide/ in-content placement
+    home: "4484411154",         // home screen, below the fold ("frontpage" unit)
+    quizFeedback: "",           // quiz screen, only after an answer is checked
+    results: "9764657993",      // results screen — the reserved #results-promo-slot ("Side by side" unit)
+    contentPage: "6919002806",  // domains/*, topics/*, study-guide/ in-content placement ("moreads" unit) — the widest-reach placement: 21 static pages
   },
 
   // Optional affiliate program IDs. Not read by any code yet — present so a
