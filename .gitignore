@@ -5,3 +5,8 @@
 # Netlify CLI local state
 .netlify/
 node_modules/
+
+# Local Claude Code tooling: the vendored ui-ux-pro-max design skill (1.9 MB),
+# machine-local settings, and progress notes. Not site content — and netlify.toml
+# publishes ".", so committing this would ship it to the live site.
+.claude/
